@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -217,7 +218,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(200, req.user, "current user fetched successfully");
+    .json(new ApiResponse(200, req.user, "current user fetched successfully"));
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
@@ -227,12 +228,16 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
 
-  const user = User.findByIdAndUpdate(req.user?._id, {
-    $set: {
-      fullname: fullname,
-      email: email,
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullname: fullname,
+        email: email,
+      },
     },
-  }).select("-password");
+    { new: true }
+  ).select("-password");
 
   return res
     .status(200)
@@ -251,7 +256,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Error while uploading on avatar");
   }
 
-  await User.findByIdAndUpdate(
+  const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
@@ -267,22 +272,22 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 });
 
 const updateUserCoverImage = asyncHandler(async (req, res) => {
-  const CoverImageLocalPath = req.file?.path;
+  const coverImageLocalPath = req.file?.path;
 
-  if (!CoverImageLocalPath) {
-    throw new ApiError(400, "CoverImage file is missing");
+  if (!coverImageLocalPath) {
+    throw new ApiError(400, "Cover image file is missing");
   }
-  const CoverImage = await uploadOnCloudinary(CoverImageLocalPath);
+  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
-  if (!CoverImage.url) {
-    throw new ApiError(400, "Error while uploading on CoverImage");
+  if (!coverImage.url) {
+    throw new ApiError(400, "Error while uploading cover image");
   }
 
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
-        CoverImage: CoverImage.url,
+        coverImage: coverImage.url,
       },
     },
     { new: true }
@@ -290,7 +295,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, user, "CoverImage updated successfully"));
+    .json(new ApiResponse(200, user, "Cover image updated successfully"));
 });
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
