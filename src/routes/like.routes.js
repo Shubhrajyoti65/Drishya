@@ -8,6 +8,11 @@ import {
   isTweetLikedByUser,
 } from "../controllers/like.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import {
+  validateVideoId,
+  validateTweetId,
+  validatePagination,
+} from "../middlewares/validation.middleware.js";
 
 const router = Router();
 
@@ -15,13 +20,17 @@ const router = Router();
 router.use(verifyJWT);
 
 // Video likes
-router.route("/toggle/video/:videoId").post(toggleVideoLike);
-router.route("/video/:videoId").get(getVideoLikes);
-router.route("/video/:videoId/check").get(isVideoLikedByUser);
+router.route("/toggle/video/:videoId").post(validateVideoId, toggleVideoLike);
+router
+  .route("/video/:videoId")
+  .get(validateVideoId, validatePagination, getVideoLikes);
+router.route("/video/:videoId/check").get(validateVideoId, isVideoLikedByUser);
 
 // Tweet likes
-router.route("/toggle/tweet/:tweetId").post(toggleTweetLike);
-router.route("/tweet/:tweetId").get(getTweetLikes);
-router.route("/tweet/:tweetId/check").get(isTweetLikedByUser);
+router.route("/toggle/tweet/:tweetId").post(validateTweetId, toggleTweetLike);
+router
+  .route("/tweet/:tweetId")
+  .get(validateTweetId, validatePagination, getTweetLikes);
+router.route("/tweet/:tweetId/check").get(validateTweetId, isTweetLikedByUser);
 
 export default router;

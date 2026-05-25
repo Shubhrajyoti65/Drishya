@@ -9,22 +9,38 @@ import {
   deletePlaylist,
 } from "../controllers/playlist.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import {
+  validateCreatePlaylist,
+  validateUpdatePlaylist,
+  validatePlaylistId,
+  validatePlaylistVideo,
+  validateUserId,
+  validatePagination,
+} from "../middlewares/validation.middleware.js";
 
 const router = Router();
 
 // Protected routes
-router.route("/").post(verifyJWT, createPlaylist);
+router.route("/").post(verifyJWT, validateCreatePlaylist, createPlaylist);
 
 // Public routes
-router.route("/:playlistId").get(getPlaylistById);
-router.route("/user/:userId").get(getUserPlaylists);
+router.route("/:playlistId").get(validatePlaylistId, getPlaylistById);
+router
+  .route("/user/:userId")
+  .get(validateUserId, validatePagination, getUserPlaylists);
 
 // Protected routes
-router.route("/:playlistId/add/:videoId").post(verifyJWT, addVideoToPlaylist);
+router
+  .route("/:playlistId/add/:videoId")
+  .post(verifyJWT, validatePlaylistVideo, addVideoToPlaylist);
 router
   .route("/:playlistId/remove/:videoId")
-  .delete(verifyJWT, removeVideoFromPlaylist);
-router.route("/:playlistId").patch(verifyJWT, updatePlaylist);
-router.route("/:playlistId").delete(verifyJWT, deletePlaylist);
+  .delete(verifyJWT, validatePlaylistVideo, removeVideoFromPlaylist);
+router
+  .route("/:playlistId")
+  .patch(verifyJWT, validateUpdatePlaylist, updatePlaylist);
+router
+  .route("/:playlistId")
+  .delete(verifyJWT, validatePlaylistId, deletePlaylist);
 
 export default router;
