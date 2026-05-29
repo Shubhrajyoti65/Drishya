@@ -118,3 +118,18 @@ dist
 .pnp.*
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Node
+
+# Python Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+ai-service/.venv/
+
+# Python Cache and Compiled Files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/

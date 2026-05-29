@@ -75,7 +75,6 @@ frontend/
 │   │   └── aiApi.js        # AI service API
 │   ├── stores/              # Zustand stores
 │   │   ├── authStore.js
-│   │   ├── videoStore.js
 │   │   └── uiStore.js
 │   ├── hooks/               # Custom hooks
 │   │   └── useAuth.js
