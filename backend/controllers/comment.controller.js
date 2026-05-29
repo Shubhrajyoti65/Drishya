@@ -104,6 +104,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
       200,
       {
         comments,
+        docs: comments,
         pagination: {
           currentPage: pageNum,
           totalPages: Math.ceil(totalComments / limitNum),

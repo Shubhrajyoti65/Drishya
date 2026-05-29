@@ -134,6 +134,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
       200,
       {
         videos,
+        docs: videos,
         pagination: {
           currentPage: pageNum,
           totalPages: Math.ceil(totalVideos / limitNum),

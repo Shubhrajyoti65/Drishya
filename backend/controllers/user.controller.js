@@ -135,8 +135,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: {
-        refreshToken: 1, // this removes the field from
+      $unset: {
+        refreshToken: 1, // this removes the field
       },
     },
     {
@@ -165,7 +165,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       incomingRefreshToken,
       process.env.REFRESH_TOKEN_SECRET
     );
-    const user = User.findById(decodedToken?._id);
+    const user = await User.findById(decodedToken?._id);
 
     if (!user) {
       throw new ApiError(401, "invalid refresh token");

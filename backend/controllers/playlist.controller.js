@@ -247,6 +247,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
       200,
       {
         playlists,
+        docs: playlists,
         pagination: {
           currentPage: pageNum,
           totalPages: Math.ceil(totalPlaylists / limitNum),

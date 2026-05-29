@@ -90,15 +90,17 @@ const getUserTweets = asyncHandler(async (req, res) => {
         likeCount: {
           $size: "$likes",
         },
-        isLikedByUser: {
-          $cond: {
-            if: {
-              $in: [req.user?._id, "$likes.likeBy"],
-            },
-            then: true,
-            else: false,
-          },
-        },
+        isLikedByUser: req.user?._id
+          ? {
+              $cond: {
+                if: {
+                  $in: [new mongoose.Types.ObjectId(req.user._id), "$likes.likeBy"],
+                },
+                then: true,
+                else: false,
+              },
+            }
+          : false,
       },
     },
     {
@@ -126,6 +128,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
       200,
       {
         tweets,
+        docs: tweets,
         pagination: {
           currentPage: pageNum,
           totalPages: Math.ceil(totalTweets / limitNum),

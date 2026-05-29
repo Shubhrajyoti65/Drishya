@@ -25,11 +25,11 @@ router.route("/:videoId").get(validateVideoId, getVideoById);
 // Protected routes (require authentication)
 router.route("/upload").post(
   verifyJWT,
-  validateVideoUpload,
   upload.fields([
     { name: "videoFile", maxCount: 1 },
     { name: "thumbnail", maxCount: 1 },
   ]),
+  validateVideoUpload,
   uploadVideo
 );
 
