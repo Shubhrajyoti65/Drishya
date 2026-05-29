@@ -38,12 +38,13 @@ app.add_middleware(
 )
 
 # Initialize services
+gemini_service = None
 try:
     gemini_service = GeminiAIService()
     logger.info("Gemini AI Service initialized successfully")
 except Exception as e:
     logger.error(f"Failed to initialize Gemini AI Service: {str(e)}")
-    raise
+    logger.warning("Service will boot but AI endpoints will return error until configured.")
 
 # Include routes
 generator_router = create_generator_routes(gemini_service)

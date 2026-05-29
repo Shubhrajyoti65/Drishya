@@ -17,7 +17,7 @@ class GeminiAIService:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-pro")
+        self.model = genai.GenerativeModel("gemini-2.0-flash")
 
     async def generate_video_titles(
         self,
@@ -39,10 +39,11 @@ class GeminiAIService:
         try:
             from prompts.prompts import VIDEO_TITLE_SYSTEM_PROMPT, VIDEO_TITLE_USER_TEMPLATE
 
+            audience = target_audience or "General YouTube Audience"
             user_message = VIDEO_TITLE_USER_TEMPLATE.format(
                 topic=topic,
                 niche=niche,
-                target_audience=target_audience,
+                target_audience=audience,
             )
 
             prompt = f"{VIDEO_TITLE_SYSTEM_PROMPT}\n\n{user_message}"
@@ -86,12 +87,14 @@ class GeminiAIService:
                 CONTENT_IDEA_USER_TEMPLATE,
             )
 
+            prev_content = previous_content or "Brand new channel, no previous content uploaded yet"
+            audience = target_audience or "General audience interested in this niche"
             trends = current_trends or "Popular topics in tech and entertainment"
 
             user_message = CONTENT_IDEA_USER_TEMPLATE.format(
                 niche=niche,
-                previous_content=previous_content,
-                target_audience=target_audience,
+                previous_content=prev_content,
+                target_audience=audience,
                 current_trends=trends,
             )
 

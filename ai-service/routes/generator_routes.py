@@ -9,13 +9,13 @@ logger = logging.getLogger(__name__)
 class VideoTitleRequest(BaseModel):
     topic: str = Field(..., min_length=3, max_length=200)
     niche: str = Field(..., min_length=3, max_length=100)
-    target_audience: str = Field(..., min_length=3, max_length=200)
+    target_audience: Optional[str] = Field(None, max_length=200)
 
 
 class ContentIdeaRequest(BaseModel):
     niche: str = Field(..., min_length=3, max_length=100)
-    previous_content: str = Field(..., min_length=3, max_length=500)
-    target_audience: str = Field(..., min_length=3, max_length=200)
+    previous_content: Optional[str] = Field(None, max_length=500)
+    target_audience: Optional[str] = Field(None, max_length=200)
     current_trends: Optional[str] = Field(None, max_length=300)
 
 
@@ -67,6 +67,11 @@ def create_generator_routes(gemini_service):
         Returns:
             VideoTitleResponse with generated titles
         """
+        if not gemini_service:
+            raise HTTPException(
+                status_code=500,
+                detail="Gemini AI Service is not initialized. Please configure a valid GEMINI_API_KEY."
+            )
         try:
             titles = await gemini_service.generate_video_titles(
                 topic=request.topic,
@@ -103,6 +108,11 @@ def create_generator_routes(gemini_service):
         Returns:
             ContentIdeaResponse with generated ideas
         """
+        if not gemini_service:
+            raise HTTPException(
+                status_code=500,
+                detail="Gemini AI Service is not initialized. Please configure a valid GEMINI_API_KEY."
+            )
         try:
             ideas = await gemini_service.generate_content_ideas(
                 niche=request.niche,
@@ -140,6 +150,11 @@ def create_generator_routes(gemini_service):
         Returns:
             ThumbnailResponse with design suggestions
         """
+        if not gemini_service:
+            raise HTTPException(
+                status_code=500,
+                detail="Gemini AI Service is not initialized. Please configure a valid GEMINI_API_KEY."
+            )
         try:
             suggestions = await gemini_service.generate_thumbnail_suggestions(
                 topic=request.topic,

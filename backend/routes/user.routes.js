@@ -24,11 +24,11 @@ import {
 
 const router = Router();
 router.route("/register").post(
-  validateUserRegister,
   upload.fields([
     { name: "avatar", maxCount: 1 },
     { name: "coverImage", maxCount: 1 },
   ]),
+  validateUserRegister,
   registerUser
 );
 
