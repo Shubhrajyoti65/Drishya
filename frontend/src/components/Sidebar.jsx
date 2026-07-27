@@ -25,7 +25,10 @@ export default function Sidebar() {
         <Link to="/upload" className="block px-4 py-2 rounded hover:bg-gray-700 text-white">
           Upload
         </Link>
-        <Link to="/profile" className="block px-4 py-2 rounded hover:bg-gray-700 text-white">
+        <Link
+          to={user?.username ? `/channel/${user.username}` : "/profile"}
+          className="block px-4 py-2 rounded hover:bg-gray-700 text-white"
+        >
           My Profile
         </Link>
         <Link to="/playlists" className="block px-4 py-2 rounded hover:bg-gray-700 text-white">
