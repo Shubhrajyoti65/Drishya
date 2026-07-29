@@ -1,5 +1,6 @@
 import json
 import os
+import asyncio
 import google.generativeai as genai
 from typing import List, Dict
 import logging
@@ -17,7 +18,32 @@ class GeminiAIService:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-2.0-flash")
+        self.primary_model = genai.GenerativeModel("gemini-2.0-flash")
+        self.fallback_model = genai.GenerativeModel("gemini-2.0-flash-lite")
+
+    async def _generate_with_fallback(self, prompt: str) -> str:
+        """Generate content using primary model, with automatic rate limit backoff and fallback if quota is exceeded"""
+        for attempt in range(2):
+            try:
+                response = self.primary_model.generate_content(prompt)
+                return response.text
+            except Exception as e:
+                err_str = str(e).lower()
+                if ("quota" in err_str or "429" in err_str or "limit" in err_str) and attempt == 0:
+                    logger.warning("Gemini rate limit hit (429). Waiting 9 seconds for cooldown and retrying...")
+                    await asyncio.sleep(9)
+                    continue
+
+                if "quota" in err_str or "429" in err_str or "limit" in err_str:
+                    logger.warning("Primary model failed. Retrying with fallback model (gemini-2.0-flash-lite)...")
+                    try:
+                        response = self.fallback_model.generate_content(prompt)
+                        return response.text
+                    except Exception as fallback_err:
+                        logger.error(f"Fallback model also failed: {str(fallback_err)}")
+                        raise fallback_err
+                else:
+                    raise e
 
     async def generate_video_titles(
         self,
@@ -48,8 +74,7 @@ class GeminiAIService:
 
             prompt = f"{VIDEO_TITLE_SYSTEM_PROMPT}\n\n{user_message}"
 
-            response = self.model.generate_content(prompt)
-            response_text = response.text
+            response_text = await self._generate_with_fallback(prompt)
 
             # Parse JSON response
             json_str = self._extract_json(response_text)
@@ -60,6 +85,16 @@ class GeminiAIService:
 
         except Exception as e:
             logger.error(f"Error generating video titles: {str(e)}")
+            if "quota" in str(e).lower() or "429" in str(e) or "limit" in str(e):
+                logger.info("Gemini API quota reached. Returning topic-customized offline template titles.")
+                aud = target_audience or "Viewers"
+                return [
+                    f"Mastering {topic}: The Complete Guide for {aud}",
+                    f"10 Essential Things You MUST Know About {topic}",
+                    f"How to Get Started with {topic} ({niche}) - Step-by-Step",
+                    f"The Ultimate Strategy for {topic} in 2026",
+                    f"Why Every {aud} Needs to Learn {topic} Today"
+                ]
             raise
 
     async def generate_content_ideas(
@@ -100,8 +135,7 @@ class GeminiAIService:
 
             prompt = f"{CONTENT_IDEA_SYSTEM_PROMPT}\n\n{user_message}"
 
-            response = self.model.generate_content(prompt)
-            response_text = response.text
+            response_text = await self._generate_with_fallback(prompt)
 
             # Parse JSON response
             json_str = self._extract_json(response_text)
@@ -112,6 +146,31 @@ class GeminiAIService:
 
         except Exception as e:
             logger.error(f"Error generating content ideas: {str(e)}")
+            if "quota" in str(e).lower() or "429" in str(e) or "limit" in str(e):
+                logger.info("Gemini API quota reached. Returning niche-customized offline template content ideas.")
+                aud = target_audience or "your audience"
+                return [
+                    {
+                        "title": f"Complete Beginner's Roadmap to {niche}",
+                        "description": f"A comprehensive step-by-step breakdown covering essential {niche} principles tailored for {aud}."
+                    },
+                    {
+                        "title": f"5 Major Mistakes to Avoid in {niche}",
+                        "description": f"Identify key errors and actionable strategies to help {aud} succeed faster in {niche}."
+                    },
+                    {
+                        "title": f"Deep Dive: Top Trends and Tools in {niche} for 2026",
+                        "description": f"An insightful analysis of the latest tools and industry shifts every {niche} creator should know."
+                    },
+                    {
+                        "title": f"Hands-On Masterclass: Building a Real-World {niche} Project",
+                        "description": f"A practical walkthrough demonstrating how to take ideas from concept to completion."
+                    },
+                    {
+                        "title": f"The Future of {niche}: What's Next?",
+                        "description": f"Forward-looking predictions and expert insights into upcoming developments in {niche}."
+                    }
+                ]
             raise
 
     async def generate_thumbnail_suggestions(
@@ -142,8 +201,7 @@ class GeminiAIService:
 
             prompt = f"{THUMBNAIL_SYSTEM_PROMPT}\n\n{user_message}"
 
-            response = self.model.generate_content(prompt)
-            response_text = response.text
+            response_text = await self._generate_with_fallback(prompt)
 
             # Parse JSON response
             json_str = self._extract_json(response_text)

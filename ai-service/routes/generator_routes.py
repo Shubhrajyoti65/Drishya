@@ -22,6 +22,7 @@ class ContentIdeaRequest(BaseModel):
 class ThumbnailRequest(BaseModel):
     topic: str = Field(..., min_length=3, max_length=200)
     category: str = Field(..., min_length=3, max_length=100)
+    mood: Optional[str] = Field(None, max_length=100)
 
 
 class VideoTitleResponse(BaseModel):
@@ -42,7 +43,7 @@ class ThumbnailResponse(BaseModel):
     message: str
 
 
-def create_generator_routes(gemini_service):
+def create_generator_routes(gemini_service, fal_service):
     """
     Create FastAPI routes for content generation
     
@@ -150,10 +151,37 @@ def create_generator_routes(gemini_service):
         Returns:
             ThumbnailResponse with design suggestions
         """
+        # Try generating via Fal.ai if available
+        if fal_service and fal_service.api_key:
+            try:
+                import asyncio
+                # Run the blocking Fal.ai network call in a separate thread
+                image_url = await asyncio.to_thread(
+                    fal_service.generate_thumbnail_image,
+                    topic=request.topic,
+                    category=request.category,
+                    mood=request.mood
+                )
+                suggestions = [
+                    {
+                        "text": f"Generated Thumbnail for '{request.topic}'",
+                        "imageUrl": image_url,
+                        "layout": f"FLUX Dev generated landscape image ({request.category} niche)",
+                        "colors": f"Mood: {request.mood or 'default'}"
+                    }
+                ]
+                return ThumbnailResponse(
+                    success=True,
+                    suggestions=suggestions,
+                    message="Thumbnail image generated successfully using Fal.ai"
+                )
+            except Exception as e:
+                logger.warning(f"Fal.ai generation failed, falling back to Gemini suggestions: {str(e)}")
+
         if not gemini_service:
             raise HTTPException(
                 status_code=500,
-                detail="Gemini AI Service is not initialized. Please configure a valid GEMINI_API_KEY."
+                detail="Neither Fal.ai nor Gemini AI Service is initialized. Please configure API keys."
             )
         try:
             suggestions = await gemini_service.generate_thumbnail_suggestions(

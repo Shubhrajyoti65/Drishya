@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Import services and routes
 from services.gemini_service import GeminiAIService
+from services.fal_service import FalAIService
 from routes.generator_routes import create_generator_routes
 
 # Initialize FastAPI app
@@ -44,10 +45,16 @@ try:
     logger.info("Gemini AI Service initialized successfully")
 except Exception as e:
     logger.error(f"Failed to initialize Gemini AI Service: {str(e)}")
-    logger.warning("Service will boot but AI endpoints will return error until configured.")
+
+fal_service = None
+try:
+    fal_service = FalAIService()
+    logger.info("Fal.ai Service initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize Fal.ai Service: {str(e)}")
 
 # Include routes
-generator_router = create_generator_routes(gemini_service)
+generator_router = create_generator_routes(gemini_service, fal_service)
 app.include_router(generator_router)
 
 
