@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 
 export default function Sidebar() {
   const toggleSidebar = useUIStore((state) => state.toggleSidebar)
-  const { handleLogout } = useAuth()
+  const { user, handleLogout } = useAuth()
 
   return (
     <aside className="w-64 bg-gray-800 border-r border-gray-700 p-4 overflow-y-auto">

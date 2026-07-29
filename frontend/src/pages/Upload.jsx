@@ -1,4 +1,9 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { videoAPI } from '../services/api'
+
 export default function Upload() {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -6,6 +11,7 @@ export default function Upload() {
     thumbnail: null
   })
   const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState(null)
 
   const handleChange = (e) => {
     const { name, value, files } = e.target
@@ -18,12 +24,44 @@ export default function Upload() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    // Upload logic will be implemented
+    if (!formData.videoFile) {
+      setError('Video file is required')
+      return
+    }
+    if (!formData.thumbnail) {
+      setError('Thumbnail is required')
+      return
+    }
+
+    try {
+      setUploading(true)
+      setError(null)
+
+      const data = new FormData()
+      data.append('title', formData.title)
+      data.append('description', formData.description)
+      data.append('videoFile', formData.videoFile)
+      data.append('thumbnail', formData.thumbnail)
+
+      await videoAPI.uploadVideo(data)
+      navigate('/')
+    } catch (err) {
+      console.error('Video upload failed:', err)
+      setError(err.response?.data?.message || 'Failed to upload video. Please try again.')
+    } finally {
+      setUploading(false)
+    }
   }
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <h2 className="text-2xl font-bold mb-6">Upload Video</h2>
+
+      {error && (
+        <div className="mb-4 p-4 bg-red-900/50 border border-red-500 text-red-200 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="bg-gray-800 rounded-lg p-6 space-y-4">
         <div>
@@ -87,5 +125,3 @@ export default function Upload() {
     </div>
   )
 }
-
-import { useState } from 'react'
