@@ -5,23 +5,36 @@ import { Video } from "../models/video.model.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import mongoose from "mongoose";
+import fs from "fs";
 
 const uploadVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
 
-  // Validate inputs
-  if (!title?.trim() || !description?.trim()) {
-    throw new ApiError(400, "Title and description are required");
-  }
-
   const videoLocalPath = req.files?.videoFile?.[0]?.path;
   const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path;
 
+  const cleanupLocalFiles = () => {
+    if (videoLocalPath && fs.existsSync(videoLocalPath)) {
+      fs.unlinkSync(videoLocalPath);
+    }
+    if (thumbnailLocalPath && fs.existsSync(thumbnailLocalPath)) {
+      fs.unlinkSync(thumbnailLocalPath);
+    }
+  };
+
+  // Validate inputs
+  if (!title?.trim() || !description?.trim()) {
+    cleanupLocalFiles();
+    throw new ApiError(400, "Title and description are required");
+  }
+
   if (!videoLocalPath) {
+    cleanupLocalFiles();
     throw new ApiError(400, "Video file is required");
   }
 
   if (!thumbnailLocalPath) {
+    cleanupLocalFiles();
     throw new ApiError(400, "Thumbnail file is required");
   }
 
@@ -29,12 +42,14 @@ const uploadVideo = asyncHandler(async (req, res) => {
     // Upload video to Cloudinary
     const videoFile = await uploadOnCloudinary(videoLocalPath);
     if (!videoFile || !videoFile.url) {
+      cleanupLocalFiles();
       throw new ApiError(400, "Failed to upload video file");
     }
 
     // Upload thumbnail to Cloudinary
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
     if (!thumbnail || !thumbnail.url) {
+      cleanupLocalFiles();
       throw new ApiError(400, "Failed to upload thumbnail");
     }
 
@@ -55,6 +70,7 @@ const uploadVideo = asyncHandler(async (req, res) => {
       .status(201)
       .json(new ApiResponse(201, createdVideo, "Video uploaded successfully"));
   } catch (error) {
+    cleanupLocalFiles();
     throw new ApiError(500, error.message || "Error uploading video");
   }
 });

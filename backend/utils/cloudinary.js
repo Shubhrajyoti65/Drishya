@@ -11,15 +11,16 @@ const uploadOnCloudinary = async (localFilePath) => {
   });
 
   try {
-    const response = await cloudinary.uploader.upload(localFilePath, {
+    const response = await cloudinary.uploader.upload_large(localFilePath, {
       resource_type: "auto",
+      chunk_size: 6000000, // 6MB chunks
     });
 
     // console.log("Uploaded:", response.url);
     fs.unlinkSync(localFilePath);
     return response;
   } catch (error) {
-    console.error("Upload failed:", error.message);
+    console.error("Upload failed details:", error);
 
     // optional: delete only on failure
     if (fs.existsSync(localFilePath)) {
@@ -30,3 +31,4 @@ const uploadOnCloudinary = async (localFilePath) => {
   }
 };
 export { uploadOnCloudinary };
+

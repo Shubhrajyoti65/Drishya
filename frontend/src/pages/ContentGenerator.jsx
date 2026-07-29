@@ -45,7 +45,8 @@ export default function ContentGenerator() {
         titleForm.niche,
         titleForm.targetAudience
       )
-      setTitles(response.data.data.titles || [])
+      const list = response.data?.titles || response.data?.data?.titles || []
+      setTitles(list)
       showNotification('Titles generated successfully!', 'success')
     } catch (error) {
       showNotification('Failed to generate titles', 'error')
@@ -69,7 +70,8 @@ export default function ContentGenerator() {
         ideasForm.previousContent,
         ideasForm.currentTrends
       )
-      setIdeas(response.data.data.ideas || [])
+      const list = response.data?.ideas || response.data?.data?.ideas || []
+      setIdeas(list)
       showNotification('Ideas generated successfully!', 'success')
     } catch (error) {
       showNotification('Failed to generate ideas', 'error')
@@ -92,8 +94,9 @@ export default function ContentGenerator() {
         thumbnailForm.category,
         thumbnailForm.mood
       )
-      setThumbnails(response.data.data.suggestions || [])
-      showNotification('Thumbnail suggestions generated!', 'success')
+      const list = response.data?.suggestions || response.data?.data?.suggestions || []
+      setThumbnails(list)
+      showNotification('Thumbnail image generated!', 'success')
     } catch (error) {
       showNotification('Failed to generate suggestions', 'error')
       console.error(error)
@@ -292,10 +295,34 @@ export default function ContentGenerator() {
               <div className="space-y-3">
                 {thumbnails.length > 0 ? (
                   thumbnails.map((thumb, idx) => (
-                    <div key={idx} className="bg-gray-700 p-3 rounded text-gray-100">
-                      <p className="font-semibold">{thumb.text || thumb}</p>
-                      {thumb.colors && <p className="text-sm text-gray-300">Colors: {thumb.colors}</p>}
-                      {thumb.layout && <p className="text-sm text-gray-300">Layout: {thumb.layout}</p>}
+                    <div key={idx} className="bg-gray-700 p-4 rounded-xl text-gray-100 shadow-md border border-gray-600/50">
+                      {thumb.imageUrl ? (
+                        <div className="space-y-3">
+                          <p className="font-bold text-blue-400 text-sm">{thumb.text}</p>
+                          <img
+                            src={thumb.imageUrl}
+                            alt="Generated Thumbnail"
+                            className="w-full rounded-lg aspect-video object-cover border border-gray-600 shadow-lg hover:opacity-95 transition duration-200"
+                          />
+                          <div className="flex justify-between items-center text-xs text-gray-400 mt-2">
+                            <span>{thumb.layout}</span>
+                            <a
+                              href={thumb.imageUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-400 hover:text-blue-300 font-semibold hover:underline"
+                            >
+                              Open Full Size
+                            </a>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="font-semibold">{thumb.text || thumb}</p>
+                          {thumb.colors && <p className="text-sm text-gray-300">Colors: {thumb.colors}</p>}
+                          {thumb.layout && <p className="text-sm text-gray-300">Layout: {thumb.layout}</p>}
+                        </>
+                      )}
                     </div>
                   ))
                 ) : (
