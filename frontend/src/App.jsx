@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
+import { ThemeProvider } from './context/ThemeContext'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -22,28 +23,30 @@ function App() {
   const { isAuthenticated } = useAuth()
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/search" element={<SearchResults />} />
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           
-          <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
-            <Route path="/upload" element={<Upload />} />
-            <Route path="/watch/:videoId" element={<Watch />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/channel/:username" element={<Channel />} />
-            <Route path="/playlists" element={<Playlist />} />
-            <Route path="/playlist/:playlistId" element={<PlaylistVideos />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/generator" element={<ContentGenerator />} />
+          <Route element={<Layout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/search" element={<SearchResults />} />
+            
+            <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+              <Route path="/upload" element={<Upload />} />
+              <Route path="/watch/:videoId" element={<Watch />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/channel/:username" element={<Channel />} />
+              <Route path="/playlists" element={<Playlist />} />
+              <Route path="/playlist/:playlistId" element={<PlaylistVideos />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/generator" element={<ContentGenerator />} />
+            </Route>
           </Route>
-        </Route>
-      </Routes>
-    </Router>
+        </Routes>
+      </Router>
+    </ThemeProvider>
   )
 }
 

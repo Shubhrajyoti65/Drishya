@@ -1,11 +1,30 @@
 import { useState, useEffect } from 'react'
 import { tweetAPI, likeAPI } from '../services/api'
 import { useAuth } from '../hooks/useAuth'
+import PollCard from './PollCard'
+import CommunityCard from './CommunityCard'
+import {
+  MessageSquare,
+  Heart,
+  Repeat,
+  Bookmark,
+  Share2,
+  Send,
+  Image as ImageIcon,
+  BarChart2,
+  Sparkles,
+  CheckCircle2,
+  Edit3,
+  Trash2,
+  MoreHorizontal,
+  Users
+} from 'lucide-react'
 
 export default function CommunityTab({ channelId, isOwner }) {
   const { user } = useAuth()
   const [tweets, setTweets] = useState([])
   const [newTweetContent, setNewTweetContent] = useState('')
+  const [showPollEditor, setShowPollEditor] = useState(false)
   const [editingTweetId, setEditingTweetId] = useState(null)
   const [editingContent, setEditingContent] = useState('')
   const [loading, setLoading] = useState(false)
@@ -20,13 +39,13 @@ export default function CommunityTab({ channelId, isOwner }) {
       const response = await tweetAPI.getUserTweets(channelId, pageNum, 10)
       const fetchedTweets = response.data?.data?.tweets || []
       const pagination = response.data?.data?.pagination || {}
-      
+
       if (append) {
         setTweets((prev) => [...prev, ...fetchedTweets])
       } else {
         setTweets(fetchedTweets)
       }
-      
+
       setHasMore(pageNum < pagination.totalPages)
       setError(null)
     } catch (err) {
@@ -58,10 +77,10 @@ export default function CommunityTab({ channelId, isOwner }) {
       setSubmitting(true)
       const response = await tweetAPI.createTweet(newTweetContent)
       const createdTweet = response.data.data
-      
-      // Prepend the new tweet to the list
+
       setTweets((prev) => [createdTweet, ...prev])
       setNewTweetContent('')
+      setShowPollEditor(false)
       setError(null)
     } catch (err) {
       console.error('Error creating post:', err)
@@ -104,7 +123,7 @@ export default function CommunityTab({ channelId, isOwner }) {
   }
 
   const handleDeleteTweet = async (tweetId) => {
-    if (!window.confirm('Are you sure you want to delete this post?')) return
+    if (!window.confirm('Are you sure you want to delete this community post?')) return
 
     try {
       await tweetAPI.deleteTweet(tweetId)
@@ -139,12 +158,10 @@ export default function CommunityTab({ channelId, isOwner }) {
     }
   }
 
-  // Format date helper
   const formatRelativeTime = (dateString) => {
     const now = new Date()
     const past = new Date(dateString)
-    const diffMs = now - past
-    const diffSec = Math.floor(diffMs / 1000)
+    const diffSec = Math.floor((now - past) / 1000)
     const diffMin = Math.floor(diffSec / 60)
     const diffHr = Math.floor(diffMin / 60)
     const diffDays = Math.floor(diffHr / 24)
@@ -157,41 +174,60 @@ export default function CommunityTab({ channelId, isOwner }) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-8">
       {error && (
-        <div className="bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded-lg text-sm">
+        <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-sora font-semibold">
           {error}
         </div>
       )}
 
-      {/* Write Community Post Form */}
+      {/* CREATOR POST PUBLISHER (Royal Blue Accent Header) */}
       {isOwner && (
-        <form onSubmit={handleCreateTweet} className="bg-gray-800 border border-gray-700 rounded-xl p-4 shadow-xl">
+        <form onSubmit={handleCreateTweet} className="p-5 rounded-3xl bg-white dark:bg-communityDarkCard border border-gray-200 dark:border-gray-800 shadow-premium space-y-4">
           <div className="flex gap-3">
-            <img
-              src={user?.avatar || 'https://via.placeholder.com/150'}
-              alt="My Avatar"
-              className="w-10 h-10 rounded-full object-cover border border-gray-600"
-            />
+            {user?.avatar ? (
+              <img src={user.avatar} alt="Avatar" className="w-10 h-10 rounded-2xl object-cover ring-2 ring-royalBlue/30" />
+            ) : (
+              <div className="w-10 h-10 rounded-2xl bg-royalBlue text-white font-bold flex items-center justify-center text-sm">
+                {(user?.username || 'C')[0].toUpperCase()}
+              </div>
+            )}
             <div className="flex-1 space-y-3">
               <textarea
-                placeholder="What's on your mind? Share an update..."
+                placeholder="Share a video update, discussion prompt, or announcement with your community..."
                 value={newTweetContent}
                 onChange={(e) => setNewTweetContent(e.target.value)}
                 maxLength={280}
                 rows={3}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm transition"
+                className="w-full bg-gray-50 dark:bg-[#161B22] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-royalBlue/50 resize-none text-sm transition"
               />
-              <div className="flex items-center justify-between">
-                <span className={`text-xs ${newTweetContent.length >= 250 ? 'text-amber-400' : 'text-gray-500'}`}>
-                  {newTweetContent.length} / 280
-                </span>
+
+              {showPollEditor && <PollCard pollQuestion={newTweetContent || "Creator Discussion Poll"} />}
+
+              <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPollEditor(!showPollEditor)}
+                    className={`p-2 rounded-xl text-xs font-sora font-semibold flex items-center gap-1.5 transition ${showPollEditor ? 'bg-royalBlue text-white' : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      }`}
+                  >
+                    <BarChart2 className="w-4 h-4" />
+                    <span className="hidden sm:inline">Add Poll</span>
+                  </button>
+
+                  <span className={`text-xs ${newTweetContent.length >= 250 ? 'text-amber-500 font-bold' : 'text-gray-400'}`}>
+                    {newTweetContent.length} / 280
+                  </span>
+                </div>
+
                 <button
                   type="submit"
                   disabled={submitting || !newTweetContent.trim()}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white text-sm font-semibold rounded-lg shadow transition duration-200"
+                  className="px-5 py-2.5 bg-royalBlue hover:bg-blueAccent disabled:opacity-50 text-white font-sora font-semibold text-xs rounded-xl shadow-md shadow-royalBlue/20 transition flex items-center gap-1.5"
                 >
-                  {submitting ? 'Posting...' : 'Post'}
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{submitting ? 'Publishing...' : 'Publish Update'}</span>
                 </button>
               </div>
             </div>
@@ -199,122 +235,123 @@ export default function CommunityTab({ channelId, isOwner }) {
         </form>
       )}
 
-      {/* Tweets List */}
-      <div className="space-y-4">
+      {/* COMMUNITY DISCUSSIONS & POSTS LIST */}
+      <div className="space-y-6">
         {tweets.length === 0 && !loading ? (
-          <div className="text-center py-12 bg-gray-800/40 border border-gray-800 rounded-xl">
-            <svg className="w-12 h-12 mx-auto text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <p className="text-gray-400 text-sm">No community posts yet.</p>
+          <div className="text-center py-16 bg-white dark:bg-communityDarkCard rounded-3xl border border-gray-200 dark:border-gray-800 p-8 shadow-sm">
+            <Users className="w-12 h-12 mx-auto text-royalBlue mb-3" />
+            <h3 className="font-sora font-bold text-lg text-gray-900 dark:text-white">No Community Updates Yet</h3>
+            <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+              This creator hasn't published any community posts yet. Stay tuned for upcoming video updates and discussions!
+            </p>
           </div>
         ) : (
           tweets.map((tweet) => {
             const isEditing = editingTweetId === tweet._id
             return (
-              <div key={tweet._id} className="bg-gray-800 border border-gray-700/80 rounded-xl p-4 shadow hover:border-gray-600/80 transition duration-200">
-                <div className="flex gap-3">
-                  <img
-                    src={tweet.owner?.avatar || 'https://via.placeholder.com/150'}
-                    alt={tweet.owner?.fullname}
-                    className="w-10 h-10 rounded-full object-cover border border-gray-700"
-                  />
+              <div key={tweet._id} className="p-6 rounded-3xl bg-white dark:bg-communityDarkCard border border-gray-200 dark:border-gray-800/80 shadow-premium hover:shadow-premium-hover transition-all duration-300">
+                <div className="flex gap-3.5">
+                  {tweet.owner?.avatar ? (
+                    <img src={tweet.owner.avatar} alt={tweet.owner.fullname} className="w-11 h-11 rounded-2xl object-cover ring-2 ring-royalBlue/20" />
+                  ) : (
+                    <div className="w-11 h-11 rounded-2xl bg-royalBlue text-white font-bold flex items-center justify-center text-sm">
+                      {(tweet.owner?.username || 'C')[0].toUpperCase()}
+                    </div>
+                  )}
+
                   <div className="flex-1 min-w-0">
                     {/* Header */}
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-bold text-white text-sm truncate">{tweet.owner?.fullname}</span>
-                        <span className="text-xs text-gray-400 truncate">@{tweet.owner?.username}</span>
-                        <span className="text-xs text-gray-500">•</span>
-                        <span className="text-xs text-gray-500 flex-shrink-0">{formatRelativeTime(tweet.createdAt)}</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-sora font-bold text-sm text-gray-900 dark:text-white truncate">
+                          {tweet.owner?.fullname || tweet.owner?.username}
+                        </span>
+                        <CheckCircle2 className="w-4 h-4 text-royalBlue fill-current flex-shrink-0" />
+                        <span className="text-xs text-gray-400">@{tweet.owner?.username}</span>
+                        <span className="text-xs text-gray-400">•</span>
+                        <span className="text-xs text-gray-400 font-medium">{formatRelativeTime(tweet.createdAt)}</span>
                       </div>
-                      
+
                       {/* Owner actions */}
                       {isOwner && !isEditing && (
-                        <div className="flex items-center gap-1 text-gray-400">
+                        <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleStartEdit(tweet)}
-                            className="p-1 hover:text-blue-400 rounded transition"
-                            title="Edit Post"
+                            className="p-1.5 text-gray-400 hover:text-royalBlue rounded-lg transition"
+                            title="Edit"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                            </svg>
+                            <Edit3 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteTweet(tweet._id)}
-                            className="p-1 hover:text-red-400 rounded transition"
-                            title="Delete Post"
+                            className="p-1.5 text-gray-400 hover:text-crimson rounded-lg transition"
+                            title="Delete"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       )}
                     </div>
 
-                    {/* Content / Edit Area */}
+                    {/* Content / Edit Form */}
                     {isEditing ? (
-                      <div className="mt-2 space-y-2">
+                      <div className="space-y-3 mt-2">
                         <textarea
                           value={editingContent}
                           onChange={(e) => setEditingContent(e.target.value)}
                           maxLength={280}
                           rows={3}
-                          className="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                          className="w-full bg-gray-50 dark:bg-[#161B22] border border-gray-200 dark:border-gray-800 rounded-2xl p-3 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-royalBlue"
                         />
-                        <div className="flex items-center justify-between text-xs">
-                          <span className={`${editingContent.length >= 250 ? 'text-amber-400' : 'text-gray-500'}`}>
-                            {editingContent.length} / 280
-                          </span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-400">{editingContent.length} / 280</span>
                           <div className="flex gap-2">
                             <button
                               onClick={handleCancelEdit}
-                              disabled={submitting}
-                              className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded font-medium"
+                              className="px-3 py-1.5 rounded-xl bg-gray-200 dark:bg-gray-800 text-xs font-semibold"
                             >
                               Cancel
                             </button>
                             <button
                               onClick={() => handleUpdateTweet(tweet._id)}
-                              disabled={submitting || !editingContent.trim()}
-                              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium disabled:bg-gray-600"
+                              className="px-3 py-1.5 rounded-xl bg-royalBlue text-white text-xs font-semibold"
                             >
-                              Save
+                              Save Changes
                             </button>
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-gray-100 text-sm whitespace-pre-wrap leading-relaxed mt-1">{tweet.content}</p>
+                      <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-sans whitespace-pre-wrap mb-4">
+                        {tweet.content}
+                      </p>
                     )}
 
-                    {/* Actions */}
+                    {/* Actions Bar */}
                     {!isEditing && (
-                      <div className="mt-4 flex items-center">
+                      <div className="flex items-center gap-6 pt-3 border-t border-gray-100 dark:border-gray-800/60 text-xs text-gray-500 font-semibold">
                         <button
                           onClick={() => handleToggleLike(tweet._id)}
-                          className={`flex items-center gap-1.5 text-xs font-semibold py-1 px-2.5 rounded-full transition duration-150 ${
-                            tweet.isLikedByUser
-                              ? 'bg-blue-900/40 text-blue-400 border border-blue-800'
-                              : 'text-gray-400 hover:bg-gray-700/50 hover:text-white'
-                          }`}
+                          className={`flex items-center gap-1.5 transition ${tweet.isLikedByUser ? 'text-crimson' : 'hover:text-crimson'
+                            }`}
                         >
-                          <svg
-                            className="w-4 h-4"
-                            fill={tweet.isLikedByUser ? 'currentColor' : 'none'}
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                            />
-                          </svg>
+                          <Heart className={`w-4 h-4 ${tweet.isLikedByUser ? 'fill-current' : ''}`} />
                           <span>{tweet.likeCount || 0}</span>
+                        </button>
+
+                        <button className="flex items-center gap-1.5 hover:text-royalBlue transition">
+                          <MessageSquare className="w-4 h-4" />
+                          <span>Reply</span>
+                        </button>
+
+                        <button className="flex items-center gap-1.5 hover:text-emerald-500 transition">
+                          <Repeat className="w-4 h-4" />
+                          <span>Repost</span>
+                        </button>
+
+                        <button className="flex items-center gap-1.5 hover:text-amber-500 transition">
+                          <Bookmark className="w-4 h-4" />
+                          <span>Save</span>
                         </button>
                       </div>
                     )}
@@ -325,24 +362,46 @@ export default function CommunityTab({ channelId, isOwner }) {
           })
         )}
 
-        {/* Load More Button */}
+        {/* Load More */}
         {hasMore && !loading && (
           <div className="flex justify-center pt-4">
             <button
               onClick={handleLoadMore}
-              className="px-6 py-2 bg-gray-800 border border-gray-700 hover:bg-gray-700 text-white text-sm font-semibold rounded-lg shadow transition"
+              className="px-6 py-2.5 rounded-2xl bg-white dark:bg-communityDarkCard border border-gray-200 dark:border-gray-800 text-xs font-sora font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
             >
-              Load More
+              Load More Discussions
             </button>
           </div>
         )}
+      </div>
 
-        {/* Loading Spinner */}
-        {loading && (
-          <div className="flex justify-center py-6">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-          </div>
-        )}
+      {/* FEATURED CREATOR COMMUNITIES CARDS */}
+      <div className="pt-8 space-y-4">
+        <h3 className="font-sora font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-royalBlue" />
+          <span>Recommended Communities</span>
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <CommunityCard
+            community={{
+              name: 'Drishya AI Creators Hub',
+              members: '28.4K',
+              activity: 'Active 2m ago',
+              description: 'Official creator network for discussing AI workflows, prompts, and thumbnail techniques.',
+              image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80'
+            }}
+          />
+          <CommunityCard
+            community={{
+              name: 'Tech & Video Production',
+              members: '19.1K',
+              activity: 'Active 12m ago',
+              description: 'Hardware reviews, camera setups, editing shortcuts, and video growth strategies.',
+              image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80'
+            }}
+          />
+        </div>
       </div>
     </div>
   )

@@ -1,11 +1,38 @@
 import { useState } from 'react'
 import { generatorAPI } from '../services/aiApi'
 import { useUIStore } from '../stores/uiStore'
+import { 
+  Sparkles, 
+  Wand2, 
+  Image as ImageIcon, 
+  Type, 
+  Lightbulb, 
+  Search, 
+  BarChart3, 
+  Copy, 
+  Check, 
+  ExternalLink, 
+  Send, 
+  Bot, 
+  FileText, 
+  ArrowRight, 
+  Flame, 
+  Zap, 
+  Layers
+} from 'lucide-react'
 
 export default function ContentGenerator() {
   const showNotification = useUIStore((state) => state.showNotification)
-  const [activeTab, setActiveTab] = useState('titles')
+  const [activeTab, setActiveTab] = useState('thumbnails')
   const [loading, setLoading] = useState(false)
+  const [copiedIdx, setCopiedIdx] = useState(null)
+
+  // Floating AI Chat Assistant Panel State
+  const [showAiChat, setShowAiChat] = useState(false)
+  const [chatMessages, setChatMessages] = useState([
+    { sender: 'ai', text: 'Hello Creator! I am Drishya AI Assistant. How can I help optimize your content today?' }
+  ])
+  const [chatInput, setChatInput] = useState('')
 
   // Video Titles State
   const [titleForm, setTitleForm] = useState({
@@ -28,13 +55,35 @@ export default function ContentGenerator() {
   const [thumbnailForm, setThumbnailForm] = useState({
     topic: '',
     category: '',
-    mood: ''
+    mood: 'Energetic & Modern'
   })
   const [thumbnails, setThumbnails] = useState([])
 
+  const copyToClipboard = (text, idx) => {
+    navigator.clipboard.writeText(text)
+    setCopiedIdx(idx)
+    showNotification('Copied to clipboard!', 'success')
+    setTimeout(() => setCopiedIdx(null), 2000)
+  }
+
+  const handleSendChat = (e) => {
+    e.preventDefault()
+    if (!chatInput.trim()) return
+    const userMsg = chatInput
+    setChatMessages(prev => [...prev, { sender: 'user', text: userMsg }])
+    setChatInput('')
+
+    setTimeout(() => {
+      setChatMessages(prev => [
+        ...prev, 
+        { sender: 'ai', text: `Here is a creator tip for "${userMsg}": Focus on bold typography in your thumbnail and keep your hook under 5 seconds for maximum viewer retention.` }
+      ])
+    }, 1000)
+  }
+
   const generateTitles = async () => {
     if (!titleForm.topic || !titleForm.niche) {
-      showNotification('Please fill all fields', 'error')
+      showNotification('Please enter topic and niche', 'error')
       return
     }
 
@@ -58,7 +107,7 @@ export default function ContentGenerator() {
 
   const generateIdeas = async () => {
     if (!ideasForm.niche) {
-      showNotification('Please fill all fields', 'error')
+      showNotification('Please specify creator niche', 'error')
       return
     }
 
@@ -72,7 +121,7 @@ export default function ContentGenerator() {
       )
       const list = response.data?.ideas || response.data?.data?.ideas || []
       setIdeas(list)
-      showNotification('Ideas generated successfully!', 'success')
+      showNotification('Content ideas generated!', 'success')
     } catch (error) {
       showNotification('Failed to generate ideas', 'error')
       console.error(error)
@@ -83,7 +132,7 @@ export default function ContentGenerator() {
 
   const generateThumbnails = async () => {
     if (!thumbnailForm.topic) {
-      showNotification('Please fill all fields', 'error')
+      showNotification('Please enter video topic', 'error')
       return
     }
 
@@ -96,9 +145,9 @@ export default function ContentGenerator() {
       )
       const list = response.data?.suggestions || response.data?.data?.suggestions || []
       setThumbnails(list)
-      showNotification('Thumbnail image generated!', 'success')
+      showNotification('Thumbnail generated with FLUX AI engine!', 'success')
     } catch (error) {
-      showNotification('Failed to generate suggestions', 'error')
+      showNotification('Failed to generate thumbnail', 'error')
       console.error(error)
     } finally {
       setLoading(false)
@@ -106,233 +155,448 @@ export default function ContentGenerator() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-3xl font-bold mb-2">Content Generator</h2>
-      <p className="text-gray-400 mb-6">Powered by AI - Generate titles, ideas, and design suggestions</p>
-
-      {/* Tabs */}
-      <div className="flex gap-4 mb-6 border-b border-gray-700">
-        <button
-          onClick={() => setActiveTab('titles')}
-          className={`px-4 py-2 font-semibold transition ${activeTab === 'titles' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-400'}`}
-        >
-          Video Titles
-        </button>
-        <button
-          onClick={() => setActiveTab('ideas')}
-          className={`px-4 py-2 font-semibold transition ${activeTab === 'ideas' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-400'}`}
-        >
-          Content Ideas
-        </button>
-        <button
-          onClick={() => setActiveTab('thumbnails')}
-          className={`px-4 py-2 font-semibold transition ${activeTab === 'thumbnails' ? 'text-blue-500 border-b-2 border-blue-500' : 'text-gray-400'}`}
-        >
-          Thumbnail Design
-        </button>
-      </div>
-
-      {/* Video Titles Tab */}
-      {activeTab === 'titles' && (
-        <div className="bg-gray-800 rounded-lg p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-bold mb-4">Generate Video Titles</h3>
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Topic (e.g., Machine Learning)"
-                  value={titleForm.topic}
-                  onChange={(e) => setTitleForm({...titleForm, topic: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                />
-                <input
-                  type="text"
-                  placeholder="Niche (e.g., Tech, Gaming)"
-                  value={titleForm.niche}
-                  onChange={(e) => setTitleForm({...titleForm, niche: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                />
-                <input
-                  type="text"
-                  placeholder="Target Audience"
-                  value={titleForm.targetAudience}
-                  onChange={(e) => setTitleForm({...titleForm, targetAudience: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                />
-                <button
-                  onClick={generateTitles}
-                  disabled={loading}
-                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded font-semibold"
-                >
-                  {loading ? 'Generating...' : 'Generate Titles'}
-                </button>
-              </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 relative">
+      
+      {/* SECTION 1: HERO LANDING BANNER (Dual Red & Blue Accent Gradient) */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blueAccent via-[#5B21B6] to-crimson text-white p-8 sm:p-12 shadow-premium">
+        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+        
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs font-sora font-semibold tracking-wide">
+              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+              <span>DRISHYA AI CREATIVE WORKSPACE</span>
             </div>
 
-            <div>
-              <h3 className="text-lg font-bold mb-4">Generated Titles</h3>
-              <div className="space-y-3">
-                {titles.length > 0 ? (
-                  titles.map((title, idx) => (
-                    <div key={idx} className="bg-gray-700 p-3 rounded text-gray-100 hover:bg-gray-600 cursor-pointer transition">
-                      {title}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-400">Generate titles to see suggestions</p>
-                )}
-              </div>
+            <h1 className="font-sora font-extrabold text-3xl sm:text-5xl leading-tight tracking-tight">
+              Create Smarter with AI.
+            </h1>
+
+            <p className="text-sm sm:text-base text-white/90 max-w-2xl leading-relaxed">
+              Supercharge your creative workflow. Generate 16:9 FLUX AI thumbnails, viral video titles, content roadmaps, and SEO strategies in seconds.
+            </p>
+
+            <div className="flex flex-wrap gap-3 pt-2">
+              <button
+                onClick={() => setActiveTab('thumbnails')}
+                className="px-5 py-3 rounded-2xl bg-white text-gray-900 font-sora font-bold text-xs hover:bg-gray-100 transition shadow-lg flex items-center gap-2"
+              >
+                <ImageIcon className="w-4 h-4 text-crimson" />
+                <span>FLUX Thumbnail Studio</span>
+              </button>
+
+              <button
+                onClick={() => setShowAiChat(!showAiChat)}
+                className="px-5 py-3 rounded-2xl bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/20 text-white font-sora font-bold text-xs transition flex items-center gap-2"
+              >
+                <Bot className="w-4 h-4 text-amber-300" />
+                <span>{showAiChat ? 'Hide AI Copilot' : 'Open AI Copilot'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* AI Feature Cards Quick Switch */}
+          <div className="lg:col-span-4 grid grid-cols-2 gap-3">
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 space-y-1">
+              <Zap className="w-5 h-5 text-amber-300" />
+              <h4 className="font-sora font-bold text-xs">FLUX.1 [dev]</h4>
+              <p className="text-[10px] text-white/70">8k Photo Realism</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 space-y-1">
+              <Type className="w-5 h-5 text-blue-300" />
+              <h4 className="font-sora font-bold text-xs">Viral Titles</h4>
+              <p className="text-[10px] text-white/70">High CTR Focus</p>
             </div>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* Content Ideas Tab */}
-      {activeTab === 'ideas' && (
-        <div className="bg-gray-800 rounded-lg p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-bold mb-4">Generate Content Ideas</h3>
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Niche"
-                  value={ideasForm.niche}
-                  onChange={(e) => setIdeasForm({...ideasForm, niche: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                />
-                <input
-                  type="text"
-                  placeholder="Target Audience"
-                  value={ideasForm.targetAudience}
-                  onChange={(e) => setIdeasForm({...ideasForm, targetAudience: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                />
-                <textarea
-                  placeholder="Previous Content (optional)"
-                  value={ideasForm.previousContent}
-                  onChange={(e) => setIdeasForm({...ideasForm, previousContent: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                  rows="2"
-                />
-                <textarea
-                  placeholder="Current Trends (optional)"
-                  value={ideasForm.currentTrends}
-                  onChange={(e) => setIdeasForm({...ideasForm, currentTrends: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white"
-                  rows="2"
-                />
-                <button
-                  onClick={generateIdeas}
-                  disabled={loading}
-                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded font-semibold"
-                >
-                  {loading ? 'Generating...' : 'Generate Ideas'}
-                </button>
-              </div>
-            </div>
+      {/* SECTION 2: AI TOOLS DASHBOARD (Grid of Premium Feature Cards) */}
+      <section className="space-y-4">
+        <h2 className="font-sora font-bold text-xl text-gray-900 dark:text-white flex items-center gap-2">
+          <Layers className="w-5 h-5 text-crimson" />
+          <span>AI Studio Tools</span>
+        </h2>
 
-            <div>
-              <h3 className="text-lg font-bold mb-4">Generated Ideas</h3>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {ideas.length > 0 ? (
-                  ideas.map((idea, idx) => (
-                    <div key={idx} className="bg-gray-700 p-3 rounded text-gray-100">
-                      <p className="font-semibold">{idea.title || idea}</p>
-                      {idea.description && <p className="text-sm text-gray-300 mt-1">{idea.description}</p>}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-400">Generate ideas to see suggestions</p>
-                )}
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <button
+            onClick={() => setActiveTab('thumbnails')}
+            className={`p-5 rounded-3xl border text-left transition-all duration-300 space-y-3 ${
+              activeTab === 'thumbnails'
+                ? 'bg-gradient-to-br from-crimson/10 to-blueAccent/10 border-crimson shadow-premium-hover scale-[1.02]'
+                : 'bg-white dark:bg-[#1E1E1E] border-gray-200 dark:border-gray-800/80 hover:border-crimson/50'
+            }`}
+          >
+            <div className="w-10 h-10 rounded-2xl bg-crimson/10 text-crimson flex items-center justify-center">
+              <ImageIcon className="w-5 h-5" />
             </div>
-          </div>
+            <div>
+              <h3 className="font-sora font-bold text-base text-gray-900 dark:text-white">Thumbnail Studio</h3>
+              <p className="text-xs text-gray-500 mt-1">Generate 16:9 FLUX thumbnails</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('titles')}
+            className={`p-5 rounded-3xl border text-left transition-all duration-300 space-y-3 ${
+              activeTab === 'titles'
+                ? 'bg-gradient-to-br from-blueAccent/10 to-crimson/10 border-blueAccent shadow-premium-hover scale-[1.02]'
+                : 'bg-white dark:bg-[#1E1E1E] border-gray-200 dark:border-gray-800/80 hover:border-blueAccent/50'
+            }`}
+          >
+            <div className="w-10 h-10 rounded-2xl bg-blueAccent/10 text-blueAccent flex items-center justify-center">
+              <Type className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-sora font-bold text-base text-gray-900 dark:text-white">Title Generator</h3>
+              <p className="text-xs text-gray-500 mt-1">SEO-optimized viral video titles</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('ideas')}
+            className={`p-5 rounded-3xl border text-left transition-all duration-300 space-y-3 ${
+              activeTab === 'ideas'
+                ? 'bg-gradient-to-br from-amber-500/10 to-royalBlue/10 border-amber-500 shadow-premium-hover scale-[1.02]'
+                : 'bg-white dark:bg-[#1E1E1E] border-gray-200 dark:border-gray-800/80 hover:border-amber-500/50'
+            }`}
+          >
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+              <Lightbulb className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-sora font-bold text-base text-gray-900 dark:text-white">Content Roadmap</h3>
+              <p className="text-xs text-gray-500 mt-1">Personalized niche video ideas</p>
+            </div>
+          </button>
         </div>
-      )}
+      </section>
 
-      {/* Thumbnail Tab */}
-      {activeTab === 'thumbnails' && (
-        <div className="bg-gray-800 rounded-lg p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-bold mb-4">Generate Thumbnail Suggestions</h3>
-              <div className="space-y-4">
+      {/* SECTION 3: SPLIT WORKSPACE (Prompt Editor Left, Generated Results Right) */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        {/* LEFT PANEL: PROMPT CONTROLS */}
+        <div className="lg:col-span-5 p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-gray-800/80 shadow-premium space-y-6">
+          
+          {/* THUMBNAIL STUDIO TAB */}
+          {activeTab === 'thumbnails' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-sora font-bold text-crimson uppercase tracking-wider">
+                <ImageIcon className="w-4 h-4" />
+                <span>FLUX.1 [dev] THUMBNAIL ENGINE</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-sora font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Video Topic
+                </label>
                 <input
                   type="text"
-                  placeholder="Topic"
+                  placeholder="e.g. Building a SaaS Product in 2026"
                   value={thumbnailForm.topic}
                   onChange={(e) => setThumbnailForm({...thumbnailForm, topic: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                  className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-crimson/50"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-sora font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Category / Niche
+                </label>
                 <input
                   type="text"
-                  placeholder="Category"
+                  placeholder="e.g. Technology, Gaming, Lifestyle"
                   value={thumbnailForm.category}
                   onChange={(e) => setThumbnailForm({...thumbnailForm, category: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                  className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-crimson/50"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-sora font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Tone & Mood
+                </label>
                 <input
                   type="text"
-                  placeholder="Mood (e.g., energetic, calm)"
+                  placeholder="e.g. Energetic, Cinematic, Dark Minimalist"
                   value={thumbnailForm.mood}
                   onChange={(e) => setThumbnailForm({...thumbnailForm, mood: e.target.value})}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                  className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-crimson/50"
                 />
-                <button
-                  onClick={generateThumbnails}
-                  disabled={loading}
-                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded font-semibold"
-                >
-                  {loading ? 'Generating...' : 'Generate Suggestions'}
-                </button>
               </div>
-            </div>
 
-            <div>
-              <h3 className="text-lg font-bold mb-4">Design Suggestions</h3>
-              <div className="space-y-3">
+              <button
+                onClick={generateThumbnails}
+                disabled={loading}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-crimson to-redAccent hover:opacity-90 disabled:opacity-50 text-white font-sora font-bold text-sm shadow-md shadow-crimson/20 transition flex items-center justify-center gap-2"
+              >
+                <Wand2 className="w-4 h-4" />
+                <span>{loading ? 'Generating FLUX Image...' : 'Generate FLUX Thumbnail'}</span>
+              </button>
+            </div>
+          )}
+
+          {/* VIDEO TITLES TAB */}
+          {activeTab === 'titles' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-sora font-bold text-blueAccent uppercase tracking-wider">
+                <Type className="w-4 h-4" />
+                <span>VIRAL TITLE GENERATOR</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-sora font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Video Topic
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Next.js 15 Full Tutorial"
+                  value={titleForm.topic}
+                  onChange={(e) => setTitleForm({...titleForm, topic: e.target.value})}
+                  className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blueAccent/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-sora font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Niche
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Web Development"
+                  value={titleForm.niche}
+                  onChange={(e) => setTitleForm({...titleForm, niche: e.target.value})}
+                  className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blueAccent/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-sora font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Target Audience
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Beginner Coders & Freelancers"
+                  value={titleForm.targetAudience}
+                  onChange={(e) => setTitleForm({...titleForm, targetAudience: e.target.value})}
+                  className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blueAccent/50"
+                />
+              </div>
+
+              <button
+                onClick={generateTitles}
+                disabled={loading}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blueAccent to-royalBlue hover:opacity-90 disabled:opacity-50 text-white font-sora font-bold text-sm shadow-md shadow-blueAccent/20 transition flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{loading ? 'Generating Titles...' : 'Generate 5 Titles'}</span>
+              </button>
+            </div>
+          )}
+
+          {/* CONTENT IDEAS TAB */}
+          {activeTab === 'ideas' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-sora font-bold text-amber-500 uppercase tracking-wider">
+                <Lightbulb className="w-4 h-4" />
+                <span>CONTENT ROADMAP ENGINE</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-sora font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Channel Niche
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. AI & Tech Reviews"
+                  value={ideasForm.niche}
+                  onChange={(e) => setIdeasForm({...ideasForm, niche: e.target.value})}
+                  className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-sora font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  Target Audience
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Tech Enthusiasts & Early Adopters"
+                  value={ideasForm.targetAudience}
+                  onChange={(e) => setIdeasForm({...ideasForm, targetAudience: e.target.value})}
+                  className="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                />
+              </div>
+
+              <button
+                onClick={generateIdeas}
+                disabled={loading}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:opacity-90 disabled:opacity-50 text-white font-sora font-bold text-sm shadow-md shadow-amber-500/20 transition flex items-center justify-center gap-2"
+              >
+                <Wand2 className="w-4 h-4" />
+                <span>{loading ? 'Generating Ideas...' : 'Generate Roadmap'}</span>
+              </button>
+            </div>
+          )}
+
+        </div>
+
+        {/* RIGHT PANEL: GENERATED RESULTS WORKSPACE */}
+        <div className="lg:col-span-7 space-y-6">
+          <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-gray-800/80 shadow-premium min-h-[400px]">
+            <h3 className="font-sora font-bold text-lg text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              <span>AI Output & Workspace</span>
+            </h3>
+
+            {/* THUMBNAIL RESULTS */}
+            {activeTab === 'thumbnails' && (
+              <div className="space-y-4">
                 {thumbnails.length > 0 ? (
                   thumbnails.map((thumb, idx) => (
-                    <div key={idx} className="bg-gray-700 p-4 rounded-xl text-gray-100 shadow-md border border-gray-600/50">
+                    <div key={idx} className="p-5 rounded-2xl bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-gray-800 space-y-4">
                       {thumb.imageUrl ? (
                         <div className="space-y-3">
-                          <p className="font-bold text-blue-400 text-sm">{thumb.text}</p>
-                          <img
-                            src={thumb.imageUrl}
-                            alt="Generated Thumbnail"
-                            className="w-full rounded-lg aspect-video object-cover border border-gray-600 shadow-lg hover:opacity-95 transition duration-200"
-                          />
-                          <div className="flex justify-between items-center text-xs text-gray-400 mt-2">
+                          <div className="flex items-center justify-between">
+                            <span className="font-sora font-bold text-sm text-crimson">{thumb.text}</span>
+                            <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400">
+                              FLUX Dev 16:9
+                            </span>
+                          </div>
+
+                          <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-gray-200 dark:border-gray-800 group shadow-lg">
+                            <img src={thumb.imageUrl} alt="Generated Thumbnail" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs text-gray-500 pt-1">
                             <span>{thumb.layout}</span>
                             <a
                               href={thumb.imageUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-blue-400 hover:text-blue-300 font-semibold hover:underline"
+                              className="text-blueAccent hover:underline font-semibold flex items-center gap-1"
                             >
-                              Open Full Size
+                              <span>Open High-Res</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
                             </a>
                           </div>
                         </div>
                       ) : (
-                        <>
-                          <p className="font-semibold">{thumb.text || thumb}</p>
-                          {thumb.colors && <p className="text-sm text-gray-300">Colors: {thumb.colors}</p>}
-                          {thumb.layout && <p className="text-sm text-gray-300">Layout: {thumb.layout}</p>}
-                        </>
+                        <div>
+                          <p className="font-sora font-bold text-sm text-gray-900 dark:text-white">{thumb.text || thumb}</p>
+                          {thumb.colors && <p className="text-xs text-gray-500 mt-1">Colors: {thumb.colors}</p>}
+                        </div>
                       )}
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-400">Generate suggestions to see designs</p>
+                  <div className="text-center py-16 text-gray-400 space-y-2">
+                    <ImageIcon className="w-12 h-12 mx-auto opacity-40 text-crimson" />
+                    <p className="font-sora text-sm">Enter a topic and click Generate FLUX Thumbnail</p>
+                  </div>
                 )}
               </div>
-            </div>
+            )}
+
+            {/* TITLE RESULTS */}
+            {activeTab === 'titles' && (
+              <div className="space-y-3">
+                {titles.length > 0 ? (
+                  titles.map((title, idx) => (
+                    <div key={idx} className="p-4 rounded-2xl bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-gray-800 flex items-center justify-between group hover:border-blueAccent transition duration-200">
+                      <span className="font-sora font-semibold text-sm text-gray-900 dark:text-white pr-4">
+                        {title}
+                      </span>
+                      <button
+                        onClick={() => copyToClipboard(title, idx)}
+                        className="p-2 rounded-xl text-gray-400 hover:text-blueAccent hover:bg-white dark:hover:bg-gray-800 transition flex-shrink-0"
+                        title="Copy title"
+                      >
+                        {copiedIdx === idx ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-16 text-gray-400 space-y-2">
+                    <Type className="w-12 h-12 mx-auto opacity-40 text-blueAccent" />
+                    <p className="font-sora text-sm">Fill parameters to generate viral video titles</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* IDEAS RESULTS */}
+            {activeTab === 'ideas' && (
+              <div className="space-y-4">
+                {ideas.length > 0 ? (
+                  ideas.map((idea, idx) => (
+                    <div key={idx} className="p-5 rounded-2xl bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-gray-800 space-y-2">
+                      <h4 className="font-sora font-bold text-base text-gray-900 dark:text-white">
+                        {idea.title || idea}
+                      </h4>
+                      {idea.description && (
+                        <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                          {idea.description}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-16 text-gray-400 space-y-2">
+                    <Lightbulb className="w-12 h-12 mx-auto opacity-40 text-amber-500" />
+                    <p className="font-sora text-sm">Generate ideas to build your channel roadmap</p>
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         </div>
+
+      </section>
+
+      {/* SECTION 4: FLOATING AI COPILOT CHAT DRAWER */}
+      {showAiChat && (
+        <div className="fixed bottom-6 right-6 w-96 max-w-[calc(100vw-3rem)] rounded-3xl bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-gray-800 shadow-premium-hover z-50 overflow-hidden flex flex-col h-96">
+          <div className="p-4 bg-gradient-to-r from-blueAccent to-crimson text-white flex items-center justify-between">
+            <div className="flex items-center gap-2 font-sora font-bold text-xs">
+              <Bot className="w-4 h-4 text-amber-300" />
+              <span>Drishya AI Copilot</span>
+            </div>
+            <button onClick={() => setShowAiChat(false)} className="text-white/80 hover:text-white text-xs font-bold">
+              ✕
+            </button>
+          </div>
+
+          <div className="flex-1 p-4 overflow-y-auto space-y-3 text-xs font-sans">
+            {chatMessages.map((msg, idx) => (
+              <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] p-3 rounded-2xl ${
+                  msg.sender === 'user' 
+                    ? 'bg-crimson text-white rounded-br-none' 
+                    : 'bg-gray-100 dark:bg-[#171717] text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded-bl-none'
+                }`}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <form onSubmit={handleSendChat} className="p-3 border-t border-gray-100 dark:border-gray-800 flex gap-2">
+            <input
+              type="text"
+              placeholder="Ask AI Copilot for advice..."
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-xl bg-gray-50 dark:bg-[#171717] border border-gray-200 dark:border-gray-800 text-xs text-gray-900 dark:text-white focus:outline-none"
+            />
+            <button type="submit" className="p-2 rounded-xl bg-crimson text-white">
+              <Send className="w-3.5 h-3.5" />
+            </button>
+          </form>
+        </div>
       )}
+
     </div>
   )
 }

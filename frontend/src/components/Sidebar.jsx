@@ -1,55 +1,136 @@
-import { Link } from 'react-router-dom'
+import React from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useUIStore } from '../stores/uiStore'
 import { useAuth } from '../hooks/useAuth'
+import { 
+  Home, 
+  Upload, 
+  User, 
+  ListVideo, 
+  Sparkles, 
+  Settings, 
+  LogOut, 
+  X, 
+  Users, 
+  Compass, 
+  TrendingUp, 
+  Video
+} from 'lucide-react'
 
 export default function Sidebar() {
   const toggleSidebar = useUIStore((state) => state.toggleSidebar)
   const { user, handleLogout } = useAuth()
+  const location = useLocation()
+
+  const navLinks = [
+    { name: 'Home', path: '/', icon: Home },
+    { name: 'AI Studio', path: '/generator', icon: Sparkles, badge: 'AI' },
+    { name: 'Upload', path: '/upload', icon: Upload },
+    { name: 'My Profile', path: user?.username ? `/channel/${user.username}` : "/profile", icon: User },
+    { name: 'Playlists', path: '/playlists', icon: ListVideo },
+  ]
+
+  const isActive = (path) => location.pathname === path
 
   return (
-    <aside className="w-64 bg-gray-800 border-r border-gray-700 p-4 overflow-y-auto">
+    <aside className="w-64 bg-white dark:bg-[#0D0D0D] border-r border-gray-200 dark:border-gray-800/80 p-5 flex flex-col h-full z-40 transition-all duration-300 shadow-xl lg:shadow-none">
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-blue-400">Drishya</h1>
+        <Link to="/" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-crimson flex items-center justify-center text-white shadow-md shadow-crimson/20">
+            <Video className="w-4 h-4 fill-current" />
+          </div>
+          <span className="font-sora font-bold text-lg text-gray-900 dark:text-white">
+            Drishya<span className="text-crimson">.</span>
+          </span>
+        </Link>
         <button
           onClick={toggleSidebar}
-          className="text-gray-400 hover:text-white"
+          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          title="Close Sidebar"
         >
-          ✕
+          <X className="w-5 h-5" />
         </button>
       </div>
 
-      <nav className="space-y-2">
-        <Link to="/" className="block px-4 py-2 rounded hover:bg-gray-700 text-white">
-          Home
-        </Link>
-        <Link to="/upload" className="block px-4 py-2 rounded hover:bg-gray-700 text-white">
-          Upload
-        </Link>
+      {/* Main Navigation */}
+      <div className="flex-1 space-y-6 overflow-y-auto pr-1">
+        <div>
+          <h3 className="text-[11px] font-sora font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">
+            Menu
+          </h3>
+          <nav className="space-y-1">
+            {navLinks.map((link) => {
+              const Icon = link.icon
+              const active = isActive(link.path)
+              return (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                    active
+                      ? 'bg-crimson/10 dark:bg-crimson/20 text-crimson font-semibold'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className={`w-4 h-4 ${active ? 'text-crimson' : 'text-gray-400'}`} />
+                    <span>{link.name}</span>
+                  </div>
+                  {link.badge && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-gradient-to-r from-blueAccent to-crimson text-white">
+                      {link.badge}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+
+        {/* Communities Section */}
+        <div>
+          <h3 className="text-[11px] font-sora font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">
+            Explore & Network
+          </h3>
+          <nav className="space-y-1">
+            <Link
+              to="/#community"
+              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60 transition"
+            >
+              <Users className="w-4 h-4 text-royalBlue" />
+              <span>Creator Community</span>
+            </Link>
+            <Link
+              to="/#trending"
+              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60 transition"
+            >
+              <TrendingUp className="w-4 h-4 text-amber-500" />
+              <span>Trending Content</span>
+            </Link>
+          </nav>
+        </div>
+      </div>
+
+      {/* Footer / Account */}
+      <div className="pt-4 mt-auto border-t border-gray-200 dark:border-gray-800 space-y-1">
         <Link
-          to={user?.username ? `/channel/${user.username}` : "/profile"}
-          className="block px-4 py-2 rounded hover:bg-gray-700 text-white"
+          to="/settings"
+          className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition ${
+            isActive('/settings')
+              ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
+          }`}
         >
-          My Profile
-        </Link>
-        <Link to="/playlists" className="block px-4 py-2 rounded hover:bg-gray-700 text-white">
-          Playlists
-        </Link>
-        <Link to="/generator" className="block px-4 py-2 rounded hover:bg-gray-700 text-white">
-          Content Generator
-        </Link>
-      </nav>
-
-      <hr className="my-6 border-gray-700" />
-
-      <div className="space-y-2">
-        <Link to="/settings" className="block px-4 py-2 rounded hover:bg-gray-700 text-gray-300">
-          Settings
+          <Settings className="w-4 h-4 text-gray-400" />
+          <span>Settings</span>
         </Link>
         <button
           onClick={handleLogout}
-          className="w-full text-left px-4 py-2 rounded hover:bg-gray-700 text-gray-300"
+          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-crimson transition"
         >
-          Logout
+          <LogOut className="w-4 h-4 text-gray-400" />
+          <span>Sign Out</span>
         </button>
       </div>
     </aside>
