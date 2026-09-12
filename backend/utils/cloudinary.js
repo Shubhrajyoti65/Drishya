@@ -11,18 +11,36 @@ const uploadOnCloudinary = async (localFilePath) => {
   });
 
   try {
-    const response = await cloudinary.uploader.upload_large(localFilePath, {
-      resource_type: "auto",
-      chunk_size: 6000000, // 6MB chunks
-    });
+    const stats = fs.statSync(localFilePath);
+    let response;
 
-    // console.log("Uploaded:", response.url);
-    fs.unlinkSync(localFilePath);
+    if (stats.size > 100000000) {
+      response = await new Promise((resolve, reject) => {
+        cloudinary.uploader.upload_large(
+          localFilePath,
+          {
+            resource_type: "auto",
+            chunk_size: 6000000,
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+      });
+    } else {
+      response = await cloudinary.uploader.upload(localFilePath, {
+        resource_type: "auto",
+      });
+    }
+
+    if (fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
+    }
     return response;
   } catch (error) {
     console.error("Upload failed details:", error);
 
-    // optional: delete only on failure
     if (fs.existsSync(localFilePath)) {
       fs.unlinkSync(localFilePath);
     }

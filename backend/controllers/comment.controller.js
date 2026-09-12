@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Comment } from "../models/comment.model.js";
 import { Video } from "../models/video.model.js";
+import { Membership } from "../models/membership.model.js";
 import mongoose from "mongoose";
 
 const addComment = asyncHandler(async (req, res) => {
@@ -33,9 +34,28 @@ const addComment = asyncHandler(async (req, res) => {
     select: "username fullname avatar",
   });
 
+  // Attach member badge info if user is an active member of the video creator channel
+  const activeMembership = await Membership.findOne({
+    subscriber: req.user._id,
+    creator: video.owner,
+    status: "ACTIVE",
+    expiryDate: { $gt: new Date() },
+  }).populate("tier", "name color icon rank");
+
+  const commentObj = createdComment.toObject();
+  if (activeMembership) {
+    commentObj.owner.memberBadge = {
+      isMember: true,
+      tierName: activeMembership.tier?.name || "Member",
+      color: activeMembership.tier?.color || "#3B82F6",
+      icon: activeMembership.tier?.icon || "star",
+      rank: activeMembership.tier?.rank || 1,
+    };
+  }
+
   return res
     .status(201)
-    .json(new ApiResponse(201, createdComment, "Comment added successfully"));
+    .json(new ApiResponse(201, commentObj, "Comment added successfully"));
 });
 
 const getVideoComments = asyncHandler(async (req, res) => {
@@ -97,14 +117,42 @@ const getVideoComments = asyncHandler(async (req, res) => {
     },
   ]);
 
+  // Lookup active memberships for all comment authors against the video owner
+  const commenterIds = comments.map((c) => c.owner?._id).filter(Boolean);
+  const activeMemberships = await Membership.find({
+    subscriber: { $in: commenterIds },
+    creator: video.owner,
+    status: "ACTIVE",
+    expiryDate: { $gt: new Date() },
+  }).populate("tier", "name color icon rank");
+
+  const membershipMap = new Map();
+  activeMemberships.forEach((m) => {
+    membershipMap.set(m.subscriber.toString(), {
+      isMember: true,
+      tierName: m.tier?.name || "Member",
+      color: m.tier?.color || "#3B82F6",
+      icon: m.tier?.icon || "star",
+      rank: m.tier?.rank || 1,
+    });
+  });
+
+  const commentsWithBadges = comments.map((comment) => {
+    const subscriberId = comment.owner?._id?.toString();
+    if (subscriberId && membershipMap.has(subscriberId)) {
+      comment.owner.memberBadge = membershipMap.get(subscriberId);
+    }
+    return comment;
+  });
+
   const totalComments = await Comment.countDocuments({ video: videoId });
 
   return res.status(200).json(
     new ApiResponse(
       200,
       {
-        comments,
-        docs: comments,
+        comments: commentsWithBadges,
+        docs: commentsWithBadges,
         pagination: {
           currentPage: pageNum,
           totalPages: Math.ceil(totalComments / limitNum),

@@ -3,12 +3,15 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Video } from "../models/video.model.js";
 import { User } from "../models/user.model.js";
+import { Membership } from "../models/membership.model.js";
+import { MembershipTier } from "../models/membershipTier.model.js";
+import { Subscription } from "../models/subscription.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import mongoose from "mongoose";
 import fs from "fs";
 
 const uploadVideo = asyncHandler(async (req, res) => {
-  const { title, description } = req.body;
+  const { title, description, visibility, minimumTier } = req.body;
 
   const videoLocalPath = req.files?.videoFile?.[0]?.path;
   const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path;
@@ -38,17 +41,36 @@ const uploadVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Thumbnail file is required");
   }
 
+  const validVisibilities = ["PUBLIC", "MEMBERS_ONLY", "TIER_ONLY"];
+  const videoVisibility = validVisibilities.includes(visibility) ? visibility : "PUBLIC";
+
+  let tierId = null;
+  if (videoVisibility === "TIER_ONLY" && minimumTier) {
+    if (!mongoose.Types.ObjectId.isValid(minimumTier)) {
+      cleanupLocalFiles();
+      throw new ApiError(400, "Invalid minimum tier ID");
+    }
+    const tier = await MembershipTier.findById(minimumTier);
+    if (!tier || tier.creator.toString() !== req.user._id.toString()) {
+      cleanupLocalFiles();
+      throw new ApiError(400, "Minimum tier does not belong to creator channel");
+    }
+    tierId = tier._id;
+  }
+
   try {
     // Upload video to Cloudinary
     const videoFile = await uploadOnCloudinary(videoLocalPath);
-    if (!videoFile || !videoFile.url) {
+    const videoUrl = videoFile?.url || videoFile?.secure_url;
+    if (!videoUrl) {
       cleanupLocalFiles();
       throw new ApiError(400, "Failed to upload video file");
     }
 
     // Upload thumbnail to Cloudinary
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
-    if (!thumbnail || !thumbnail.url) {
+    const thumbnailUrl = thumbnail?.url || thumbnail?.secure_url;
+    if (!thumbnailUrl) {
       cleanupLocalFiles();
       throw new ApiError(400, "Failed to upload thumbnail");
     }
@@ -57,14 +79,16 @@ const uploadVideo = asyncHandler(async (req, res) => {
     const video = await Video.create({
       title: title.trim(),
       description: description.trim(),
-      videoFile: videoFile.url,
-      thumbnail: thumbnail.url,
+      videoFile: videoUrl,
+      thumbnail: thumbnailUrl,
       duration: videoFile.duration || 0,
       owner: req.user._id,
       isPublished: true,
+      visibility: videoVisibility,
+      minimumTier: tierId,
     });
 
-    const createdVideo = await Video.findById(video._id);
+    const createdVideo = await Video.findById(video._id).populate("minimumTier", "name price rank color icon");
 
     return res
       .status(201)
@@ -123,9 +147,31 @@ const getAllVideos = asyncHandler(async (req, res) => {
       },
     },
     {
+      $lookup: {
+        from: "membershiptiers",
+        localField: "minimumTier",
+        foreignField: "_id",
+        as: "minimumTier",
+        pipeline: [
+          {
+            $project: {
+              name: 1,
+              price: 1,
+              rank: 1,
+              color: 1,
+              icon: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
       $addFields: {
         owner: {
           $first: "$owner",
+        },
+        minimumTier: {
+          $first: "$minimumTier",
         },
       },
     },
@@ -170,7 +216,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid video ID");
   }
 
-  const video = await Video.aggregate([
+  const videoList = await Video.aggregate([
     {
       $match: {
         _id: new mongoose.Types.ObjectId(videoId),
@@ -195,53 +241,120 @@ const getVideoById = asyncHandler(async (req, res) => {
       },
     },
     {
+      $lookup: {
+        from: "membershiptiers",
+        localField: "minimumTier",
+        foreignField: "_id",
+        as: "minimumTier",
+        pipeline: [
+          {
+            $project: {
+              name: 1,
+              price: 1,
+              rank: 1,
+              color: 1,
+              icon: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
       $addFields: {
         owner: {
           $first: "$owner",
+        },
+        minimumTier: {
+          $first: "$minimumTier",
         },
       },
     },
   ]);
 
-  if (!video.length) {
+  if (!videoList.length) {
     throw new ApiError(404, "Video not found");
   }
 
-  // Increment views
-  await Video.findByIdAndUpdate(
-    videoId,
-    {
-      $inc: {
-        views: 1,
-      },
-    },
-    { new: true }
-  );
+  const video = videoList[0];
 
-  // Add video to watch history
-  if (req.user) {
-    await User.findByIdAndUpdate(req.user._id, {
-      $addToSet: {
-        watchHistory: videoId,
-      },
-    });
+  // Exclusive Content Access Verification
+  let isAuthorized = true;
+  let accessReason = "Public video";
+
+  const isOwner = req.user && req.user._id.toString() === video.owner._id.toString();
+
+  if (!isOwner && (video.visibility === "MEMBERS_ONLY" || video.visibility === "TIER_ONLY")) {
+    if (!req.user) {
+      isAuthorized = false;
+      accessReason = "Authentication required for members-only content";
+    } else {
+      // Find active membership for this creator
+      const activeMembership = await Membership.findOne({
+        subscriber: req.user._id,
+        creator: video.owner._id,
+        status: "ACTIVE",
+        expiryDate: { $gt: new Date() },
+      }).populate("tier");
+
+      if (!activeMembership) {
+        isAuthorized = false;
+        accessReason = "Active channel membership required to watch this video";
+      } else if (video.visibility === "TIER_ONLY" && video.minimumTier) {
+        // Compare tier rank
+        const userTierRank = activeMembership.tier?.rank || 1;
+        const requiredTierRank = video.minimumTier?.rank || 1;
+
+        if (userTierRank < requiredTierRank) {
+          isAuthorized = false;
+          accessReason = `Requires ${video.minimumTier.name} tier membership or higher`;
+        }
+      }
+    }
+  }
+
+  // Obscure video file URL if user is unauthorized
+  const videoData = { ...video, isAuthorized, accessReason };
+  
+  if (video.owner?._id) {
+    const subscribersCount = await Subscription.countDocuments({ channel: video.owner._id });
+    videoData.owner.subscribersCount = subscribersCount;
+  }
+
+  if (!isAuthorized) {
+    videoData.videoFile = null; // Backend protection prevents streaming/downloading URL
+  } else {
+    // Unique view incrementing per user (1 view per user)
+    if (req.user) {
+      const alreadyViewed = await Video.findOne({
+        _id: videoId,
+        viewedBy: req.user._id,
+      });
+
+      if (!alreadyViewed) {
+        await Video.findByIdAndUpdate(videoId, {
+          $addToSet: { viewedBy: req.user._id },
+          $inc: { views: 1 },
+        });
+        videoData.views = (video.views || 0) + 1;
+      }
+
+      await User.findByIdAndUpdate(req.user._id, {
+        $addToSet: { watchHistory: videoId },
+      });
+    }
   }
 
   return res
     .status(200)
-    .json(new ApiResponse(200, video[0], "Video fetched successfully"));
+    .json(new ApiResponse(200, videoData, "Video fetched successfully"));
 });
 
 const updateVideo = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const { title, description } = req.body;
+  const { title, description, visibility, minimumTier } = req.body;
 
   if (!mongoose.Types.ObjectId.isValid(videoId)) {
     throw new ApiError(400, "Invalid video ID");
-  }
-
-  if (!title?.trim() && !description?.trim()) {
-    throw new ApiError(400, "At least one field is required to update");
   }
 
   const video = await Video.findById(videoId);
@@ -257,10 +370,30 @@ const updateVideo = asyncHandler(async (req, res) => {
   const updateData = {};
   if (title?.trim()) updateData.title = title.trim();
   if (description?.trim()) updateData.description = description.trim();
+  if (visibility) {
+    const validVisibilities = ["PUBLIC", "MEMBERS_ONLY", "TIER_ONLY"];
+    if (validVisibilities.includes(visibility)) {
+      updateData.visibility = visibility;
+    }
+  }
+  if (minimumTier !== undefined) {
+    if (!minimumTier) {
+      updateData.minimumTier = null;
+    } else if (mongoose.Types.ObjectId.isValid(minimumTier)) {
+      updateData.minimumTier = minimumTier;
+    }
+  }
+
+  if (req.file?.path) {
+    const thumbnail = await uploadOnCloudinary(req.file.path);
+    if (thumbnail?.url) {
+      updateData.thumbnail = thumbnail.url;
+    }
+  }
 
   const updatedVideo = await Video.findByIdAndUpdate(videoId, updateData, {
     new: true,
-  });
+  }).populate("minimumTier", "name price rank color icon");
 
   return res
     .status(200)
@@ -284,8 +417,6 @@ const deleteVideo = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not authorized to delete this video");
   }
 
-  // Delete from Cloudinary (optional, requires additional setup)
-  // For now, just delete the document
   await Video.findByIdAndDelete(videoId);
 
   return res

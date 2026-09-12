@@ -18,32 +18,32 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Video not found");
   }
 
-  const like = await Like.findOne({
+  const existingLike = await Like.findOne({
     video: videoId,
     likeBy: req.user._id,
   });
 
-  if (like) {
-    // Unlike
-    await Like.deleteOne({
-      video: videoId,
-      likeBy: req.user._id,
-    });
-
-    return res
-      .status(200)
-      .json(new ApiResponse(200, { liked: false }, "Video unliked"));
+  let liked = false;
+  if (existingLike) {
+    await Like.deleteOne({ _id: existingLike._id });
+    liked = false;
   } else {
-    // Like
     await Like.create({
       video: videoId,
       likeBy: req.user._id,
     });
-
-    return res
-      .status(201)
-      .json(new ApiResponse(201, { liked: true }, "Video liked"));
+    liked = true;
   }
+
+  const likeCount = await Like.countDocuments({ video: videoId });
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { liked, likeCount },
+      liked ? "Video liked" : "Video unliked"
+    )
+  );
 });
 
 const toggleTweetLike = asyncHandler(async (req, res) => {

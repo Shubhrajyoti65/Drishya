@@ -205,4 +205,99 @@ const deleteTweet = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Tweet deleted successfully"));
 });
 
-export { createTweet, getUserTweets, updateTweet, deleteTweet };
+const getAllTweets = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+
+  const pageNum = parseInt(page, 10) || 1;
+  const limitNum = parseInt(limit, 10) || 10;
+
+  const tweets = await Tweet.aggregate([
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              fullname: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        owner: {
+          $first: "$owner",
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "tweet",
+        as: "likes",
+      },
+    },
+    {
+      $addFields: {
+        likeCount: {
+          $size: "$likes",
+        },
+        isLikedByUser: req.user?._id
+          ? {
+              $cond: {
+                if: {
+                  $in: [new mongoose.Types.ObjectId(req.user._id), "$likes.likeBy"],
+                },
+                then: true,
+                else: false,
+              },
+            }
+          : false,
+      },
+    },
+    {
+      $project: {
+        likes: 0,
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+    {
+      $skip: (pageNum - 1) * limitNum,
+    },
+    {
+      $limit: limitNum,
+    },
+  ]);
+
+  const totalTweets = await Tweet.countDocuments();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        tweets,
+        docs: tweets,
+        pagination: {
+          currentPage: pageNum,
+          totalPages: Math.ceil(totalTweets / limitNum),
+          totalTweets,
+          limit: limitNum,
+        },
+      },
+      "All community tweets fetched successfully"
+    )
+  );
+});
+
+export { createTweet, getUserTweets, getAllTweets, updateTweet, deleteTweet };

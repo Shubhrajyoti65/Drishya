@@ -8,7 +8,7 @@ import {
   togglePublishStatus,
 } from "../controllers/video.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT, optionalVerifyJWT } from "../middlewares/auth.middleware.js";
 import {
   validateVideoUpload,
   validateVideoUpdate,
@@ -18,9 +18,9 @@ import {
 
 const router = Router();
 
-// Public routes
-router.route("/").get(validateVideoQuery, getAllVideos);
-router.route("/:videoId").get(validateVideoId, getVideoById);
+// Public / Optionally Authenticated routes
+router.route("/").get(optionalVerifyJWT, validateVideoQuery, getAllVideos);
+router.route("/:videoId").get(optionalVerifyJWT, validateVideoId, getVideoById);
 
 // Protected routes (require authentication)
 router.route("/upload").post(
@@ -35,7 +35,7 @@ router.route("/upload").post(
 
 router
   .route("/:videoId/update")
-  .patch(verifyJWT, validateVideoUpdate, updateVideo);
+  .patch(verifyJWT, upload.single("thumbnail"), validateVideoUpdate, updateVideo);
 router
   .route("/:videoId/delete")
   .delete(verifyJWT, validateVideoId, deleteVideo);

@@ -31,7 +31,19 @@ api.interceptors.response.use(
       // Token expired or invalid
       localStorage.removeItem("accessToken");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      // Only redirect to login if user is currently on a protected route
+      const currentPath = window.location.pathname;
+      const isPublicPath =
+        currentPath === "/" ||
+        currentPath === "/login" ||
+        currentPath === "/register" ||
+        currentPath.startsWith("/watch/") ||
+        currentPath.startsWith("/channel/") ||
+        currentPath === "/search";
+
+      if (!isPublicPath) {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
@@ -90,7 +102,14 @@ export const videoAPI = {
 
   getVideoById: (videoId) => api.get(`/videos/${videoId}`),
 
-  updateVideo: (videoId, data) => api.patch(`/videos/${videoId}/update`, data),
+  updateVideo: (videoId, data) => {
+    if (data instanceof FormData) {
+      return api.patch(`/videos/${videoId}/update`, data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    }
+    return api.patch(`/videos/${videoId}/update`, data);
+  },
 
   deleteVideo: (videoId) => api.delete(`/videos/${videoId}/delete`),
 
@@ -135,6 +154,9 @@ export const tweetAPI = {
   getUserTweets: (userId, page = 1, limit = 10) =>
     api.get(`/tweets/user/${userId}`, { params: { page, limit } }),
 
+  getAllTweets: (page = 1, limit = 10) =>
+    api.get("/tweets", { params: { page, limit } }),
+
   updateTweet: (tweetId, content) =>
     api.patch(`/tweets/${tweetId}`, { content }),
 
@@ -178,6 +200,31 @@ export const playlistAPI = {
     api.patch(`/playlists/${playlistId}`, data),
 
   deletePlaylist: (playlistId) => api.delete(`/playlists/${playlistId}`),
+};
+
+// Membership Tier API
+export const membershipTierAPI = {
+  createTier: (data) => api.post("/membership-tiers", data),
+  getCreatorTiers: (creatorId) => api.get(`/membership-tiers/creator/${creatorId}`),
+  updateTier: (tierId, data) => api.put(`/membership-tiers/${tierId}`, data),
+  deleteTier: (tierId) => api.delete(`/membership-tiers/${tierId}`),
+  reorderTiers: (tiers) => api.patch("/membership-tiers/reorder", { tiers }),
+};
+
+// Payment API
+export const paymentAPI = {
+  createOrder: (creatorId, tierId) => api.post("/payments/create-order", { creatorId, tierId }),
+  verifyPayment: (paymentData) => api.post("/payments/verify", paymentData),
+};
+
+// Membership API
+export const membershipAPI = {
+  getMyMemberships: () => api.get("/memberships/my-memberships"),
+  getMembershipDetails: (membershipId) => api.get(`/memberships/${membershipId}`),
+  cancelMembership: (membershipId) => api.patch(`/memberships/${membershipId}/cancel`),
+  getCreatorMembers: (page = 1, limit = 20, status = "") =>
+    api.get("/memberships/creator/members", { params: { page, limit, status } }),
+  getCreatorMembershipStats: () => api.get("/memberships/creator/stats"),
 };
 
 export default api;

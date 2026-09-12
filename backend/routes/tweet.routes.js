@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createTweet,
   getUserTweets,
+  getAllTweets,
   updateTweet,
   deleteTweet,
 } from "../controllers/tweet.controller.js";
@@ -16,8 +17,11 @@ import {
 
 const router = Router();
 
-// Protected routes
-router.route("/").post(verifyJWT, validateCreateTweet, createTweet);
+// Routes
+router
+  .route("/")
+  .get(validatePagination, getAllTweets)
+  .post(verifyJWT, validateCreateTweet, createTweet);
 
 // Public route
 router

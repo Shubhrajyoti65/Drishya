@@ -24,6 +24,9 @@ import commentRouter from "./routes/comment.routes.js";
 import tweetRouter from "./routes/tweet.routes.js";
 import subscriptionRouter from "./routes/subscription.routes.js";
 import playlistRouter from "./routes/playlist.routes.js";
+import membershipTierRouter from "./routes/membershipTier.routes.js";
+import paymentRouter from "./routes/payment.routes.js";
+import membershipRouter from "./routes/membership.routes.js";
 import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 
 //router declare
@@ -34,6 +37,9 @@ app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/tweets", tweetRouter);
 app.use("/api/v1/subscriptions", subscriptionRouter);
 app.use("/api/v1/playlists", playlistRouter);
+app.use("/api/v1/membership-tiers", membershipTierRouter);
+app.use("/api/v1/payments", paymentRouter);
+app.use("/api/v1/memberships", membershipRouter);
 
 // Global error handling middleware (must be last)
 app.use(errorHandler);
