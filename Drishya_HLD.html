@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drishya — High-Level Design (HLD) Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0F172A;
+      --bg-secondary: #1E293B;
+      --bg-card: #1E293B;
+      --bg-card-hover: #334155;
+      --border-color: #334155;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --accent-blue: #38BDF8;
+      --accent-royal: #2563EB;
+      --accent-crimson: #EF4444;
+      --accent-emerald: #10B981;
+      --accent-amber: #F59E0B;
+      --accent-purple: #8B5CF6;
+      --code-bg: #090D16;
+      --sidebar-width: 280px;
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #F8FAFC;
+      --bg-secondary: #F1F5F9;
+      --bg-card: #FFFFFF;
+      --bg-card-hover: #F8FAFC;
+      --border-color: #E2E8F0;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      --accent-blue: #0284C7;
+      --accent-royal: #2563EB;
+      --accent-crimson: #DC2626;
+      --accent-emerald: #059669;
+      --accent-amber: #D97706;
+      --accent-purple: #7C3AED;
+      --code-bg: #F1F5F9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      display: flex;
+      min-height: 100vh;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      items-center;
+      gap: 0.5rem;
+    }
+
+    .brand-badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      background-color: var(--accent-crimson);
+      color: white;
+      border-radius: 9999px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .search-box {
+      margin-top: 1rem;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 1rem 0;
+    }
+
+    .nav-item a {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem 1.5rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .nav-item a:hover, .nav-item a.active {
+      color: var(--accent-blue);
+      background-color: var(--bg-card-hover);
+      border-left-color: var(--accent-blue);
+    }
+
+    .nav-item.sub-item a {
+      padding-left: 2.25rem;
+      font-size: 0.8rem;
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      padding: 2.5rem 3rem;
+      max-width: 1200px;
+    }
+
+    /* Top Control Bar */
+    .top-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 2rem;
+      gap: 1rem;
+    }
+
+    .theme-toggle-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Section Cards */
+    section.hld-section {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 1rem;
+      padding: 2rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 4px 20px -2px rgba(0,0,0,0.1);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: justify-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-num {
+      color: var(--accent-blue);
+      font-family: 'Fira Code', monospace;
+    }
+
+    .collapse-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    /* Typography & UI Elements */
+    h3 {
+      font-family: 'Sora', sans-serif;
+      font-size: 1.15rem;
+      margin: 1.5rem 0 0.75rem 0;
+      color: var(--accent-blue);
+    }
+
+    p {
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    ul, ol {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    li {
+      margin-bottom: 0.4rem;
+    }
+
+    /* Tech Stack Badges */
+    .badge-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tech-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.5rem;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Code & Tables */
+    pre {
+      background-color: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+    }
+
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Sora', sans-serif;
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background-color: var(--bg-card-hover);
+    }
+
+    /* SVG Diagrams Container */
+    .diagram-container {
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+    }
+
+    svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Callouts */
+    .callout {
+      padding: 1rem;
+      border-left: 4px solid var(--accent-blue);
+      background-color: var(--bg-primary);
+      border-radius: 0 0.5rem 0.5rem 0;
+      margin-bottom: 1.5rem;
+    }
+
+    .callout.future {
+      border-left-color: var(--accent-amber);
+    }
+
+    .callout-title {
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Back to top */
+    .back-to-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background-color: var(--accent-royal);
+      color: white;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      cursor: pointer;
+      border: none;
+      z-index: 99;
+    }
+
+    @media (max-width: 900px) {
+      .sidebar {
+        display: none;
+      }
+      .main-content {
+        margin-left: 0;
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-title">
+        <span>Drishya 🎥</span>
+        <span class="brand-badge">HLD 1.0</span>
+      </div>
+      <div class="search-box">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search architecture..." onkeyup="filterNav()">
+      </div>
+    </div>
+    <ul class="nav-list" id="navList">
+      <li class="nav-item"><a href="#overview" class="active">1. Project Overview</a></li>
+      <li class="nav-item"><a href="#tech-stack">2. Technology Stack</a></li>
+      <li class="nav-item"><a href="#system-arch">3. System Architecture</a></li>
+      <li class="nav-item"><a href="#frontend-arch">4. Frontend Architecture</a></li>
+      <li class="nav-item"><a href="#backend-arch">5. Backend Architecture</a></li>
+      <li class="nav-item"><a href="#database-design">6. Database Design (ERD)</a></li>
+      <li class="nav-item"><a href="#auth-flow">7. Authentication Flow</a></li>
+      <li class="nav-item"><a href="#video-flow">8. Video Upload & Playback</a></li>
+      <li class="nav-item"><a href="#community-arch">9. Community Architecture</a></li>
+      <li class="nav-item"><a href="#ai-arch">10. AI Microservice Architecture</a></li>
+      <li class="nav-item"><a href="#membership-arch">11. Membership & Payments</a></li>
+      <li class="nav-item"><a href="#access-control">12. Protected Content Access</a></li>
+      <li class="nav-item"><a href="#api-arch">13. API Route Directory</a></li>
+      <li class="nav-item"><a href="#deployment">14. Deployment Architecture</a></li>
+      <li class="nav-item"><a href="#security">15. Security Architecture</a></li>
+      <li class="nav-item"><a href="#project-structure">16. Directory Structure</a></li>
+      <li class="nav-item"><a href="#data-flows">17. Data Flow Diagrams</a></li>
+      <li class="nav-item"><a href="#master-arch">18. Master Architecture Diagram</a></li>
+      <li class="nav-item"><a href="#future-enhancements">19. Future Enhancements</a></li>
+      <li class="nav-item"><a href="#developer-guide">20. Developer Onboarding Guide</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <div class="top-bar">
+      <button class="theme-toggle-btn" onclick="toggleTheme()">
+        <span id="themeIcon">🌙</span>
+        <span id="themeText">Dark Mode</span>
+      </button>
+    </div>
+
+    <!-- 1. Overview -->
+    <section id="overview" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">01.</span> Project Overview</h2>
+      </div>
+      <p><strong>Drishya</strong> is a full-stack, enterprise-grade video-sharing and creator ecosystem. It empowers digital creators to monetize content through customized membership tiers, engage fans via interactive community polls, and leverage Google Gemini AI microservices for automated title, content idea, and thumbnail generation.</p>
+      
+      <h3>Key System Capabilities</h3>
+      <ul>
+        <li><strong>Video Streaming & Access Control:</strong> Stream public and members-only videos with server-side URL obfuscation.</li>
+        <li><strong>Razorpay Payments:</strong> Full subscription lifecycle verified via server-side HMAC-SHA256 signatures and webhooks.</li>
+        <li><strong>Interactive Community Polls:</strong> Editable creator polls with zero initial fake votes, live vote switching, and real-time percentage progress bars.</li>
+        <li><strong>AI Microservice (FastAPI):</strong> Powered by Google Gemini 2.5 Flash for asynchronous content recommendations and thumbnail prompt design.</li>
+      </ul>
+    </section>
+
+    <!-- 2. Tech Stack -->
+    <section id="tech-stack" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">02.</span> Technology Stack</h2>
+      </div>
+      <div class="badge-grid">
+        <span class="tech-badge">⚡ React 18</span>
+        <span class="tech-badge">⚡ Vite 5</span>
+        <span class="tech-badge">🚀 Node.js (ESM)</span>
+        <span class="tech-badge">🚀 Express 5</span>
+        <span class="tech-badge">🍃 MongoDB Atlas</span>
+        <span class="tech-badge">🍃 Mongoose 9</span>
+        <span class="tech-badge">🤖 FastAPI</span>
+        <span class="tech-badge">🤖 Google Gemini 2.5 Flash</span>
+        <span class="tech-badge">☁️ Cloudinary SDK</span>
+        <span class="tech-badge">💳 Razorpay SDK</span>
+        <span class="tech-badge">🎨 TailwindCSS</span>
+        <span class="tech-badge">🔑 JWT Auth</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Technology</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Frontend App</td>
+            <td>React 18 + Vite 5</td>
+            <td>Single Page Application (SPA), component architecture, fast HMR.</td>
+          </tr>
+          <tr>
+            <td>State & Router</td>
+            <td>Zustand + React Router 6</td>
+            <td>Global auth state management and declarative routing.</td>
+          </tr>
+          <tr>
+            <td>Backend API Server</td>
+            <td>Node.js + Express 5</td>
+            <td>RESTful microservice routing, auth middleware, file upload streams.</td>
+          </tr>
+          <tr>
+            <td>Database & ODM</td>
+            <td>MongoDB Atlas + Mongoose 9</td>
+            <td>Document database for users, videos, memberships, tweets, and logs.</td>
+          </tr>
+          <tr>
+            <td>AI Microservice</td>
+            <td>FastAPI + Uvicorn</td>
+            <td>Python microservice on port 8001 handling Gemini AI content generation.</td>
+          </tr>
+          <tr>
+            <td>Media Storage</td>
+            <td>Cloudinary API</td>
+            <td>Cloud video & image hosting with auto-resource type chunking.</td>
+          </tr>
+          <tr>
+            <td>Payment Gateway</td>
+            <td>Razorpay API</td>
+            <td>Order creation, HMAC SHA256 payment verification & webhooks.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 3. Overall System Architecture -->
+    <section id="system-arch" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">03.</span> Overall System Architecture</h2>
+      </div>
+      <p>The Drishya system comprises three distinct operational layers: the React SPA Frontend, Node/Express Core Backend API, and FastAPI AI Microservice, connected to MongoDB Atlas and Cloudinary media services.</p>
+
+      <div class="diagram-container">
+        <svg width="800" height="420" viewBox="0 0 800 420" fill="none">
+          <!-- Background Grid -->
+          <rect width="800" height="420" rx="12" fill="#090D16"/>
+          
+          <!-- Frontend -->
+          <rect x="40" y="160" width="160" height="100" rx="8" fill="#1E293B" stroke="#38BDF8" stroke-width="2"/>
+          <text x="120" y="200" fill="#38BDF8" font-family="Sora" font-size="14" font-weight="bold" text-anchor="middle">React / Vite</text>
+          <text x="120" y="220" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">Frontend App (3000)</text>
+
+          <!-- Arrows from Frontend -->
+          <path d="M 200 190 L 300 130" stroke="#38BDF8" stroke-width="2" marker-end="url(#arrow)"/>
+          <path d="M 200 230 L 300 290" stroke="#38BDF8" stroke-width="2" marker-end="url(#arrow)"/>
+
+          <!-- Backend -->
+          <rect x="300" y="80" width="180" height="100" rx="8" fill="#1E293B" stroke="#2563EB" stroke-width="2"/>
+          <text x="390" y="120" fill="#60A5FA" font-family="Sora" font-size="14" font-weight="bold" text-anchor="middle">Express Backend API</text>
+          <text x="390" y="140" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">Port 8000 (Auth/Video/Payments)</text>
+
+          <!-- AI Service -->
+          <rect x="300" y="240" width="180" height="100" rx="8" fill="#1E293B" stroke="#8B5CF6" stroke-width="2"/>
+          <text x="390" y="280" fill="#A78BFA" font-family="Sora" font-size="14" font-weight="bold" text-anchor="middle">FastAPI AI Service</text>
+          <text x="390" y="300" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">Port 8001 (Gemini 2.5 Flash)</text>
+
+          <!-- External Services -->
+          <rect x="580" y="40" width="160" height="70" rx="8" fill="#1E293B" stroke="#10B981" stroke-width="2"/>
+          <text x="660" y="80" fill="#34D399" font-family="Sora" font-size="13" font-weight="bold" text-anchor="middle">MongoDB Atlas</text>
+
+          <rect x="580" y="140" width="160" height="70" rx="8" fill="#1E293B" stroke="#F59E0B" stroke-width="2"/>
+          <text x="660" y="180" fill="#FBBF24" font-family="Sora" font-size="13" font-weight="bold" text-anchor="middle">Cloudinary Storage</text>
+
+          <rect x="580" y="240" width="160" height="70" rx="8" fill="#1E293B" stroke="#EF4444" stroke-width="2"/>
+          <text x="660" y="280" fill="#F87171" font-family="Sora" font-size="13" font-weight="bold" text-anchor="middle">Razorpay Gateway</text>
+
+          <!-- Backend to DB/Cloudinary/Razorpay -->
+          <path d="M 480 110 L 580 75" stroke="#94A3B8" stroke-width="1.5"/>
+          <path d="M 480 130 L 580 175" stroke="#94A3B8" stroke-width="1.5"/>
+          <path d="M 480 150 L 580 265" stroke="#94A3B8" stroke-width="1.5"/>
+
+          <!-- Marker -->
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#38BDF8"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+    </section>
+
+    <!-- 4. Frontend Architecture -->
+    <section id="frontend-arch" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">04.</span> Frontend Architecture</h2>
+      </div>
+      <p>The React SPA uses modular components, Zustand store for state management, and Axios interceptors for authenticated REST requests.</p>
+      
+      <div class="diagram-container">
+        <svg width="750" height="300" viewBox="0 0 750 300" fill="none">
+          <rect width="750" height="300" rx="12" fill="#090D16"/>
+          
+          <rect x="30" y="30" width="690" height="50" rx="6" fill="#1E293B" stroke="#38BDF8"/>
+          <text x="375" y="60" fill="#38BDF8" font-family="Sora" font-size="14" font-weight="bold" text-anchor="middle">App Router (React Router 6) — Pages & Views</text>
+
+          <rect x="30" y="110" width="200" height="150" rx="6" fill="#1E293B" stroke="#334155"/>
+          <text x="130" y="135" fill="#F8FAFC" font-family="Sora" font-size="12" font-weight="bold" text-anchor="middle">Core Pages</text>
+          <text x="130" y="160" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">• Home.jsx / Watch.jsx</text>
+          <text x="130" y="180" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">• Channel.jsx / Upload.jsx</text>
+          <text x="130" y="200" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">• CreatorMemberships.jsx</text>
+
+          <rect x="275" y="110" width="200" height="150" rx="6" fill="#1E293B" stroke="#334155"/>
+          <text x="375" y="135" fill="#F8FAFC" font-family="Sora" font-size="12" font-weight="bold" text-anchor="middle">Interactive Components</text>
+          <text x="375" y="160" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">• CommunityTab.jsx</text>
+          <text x="375" y="180" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">• PollCard.jsx (Editable Poll)</text>
+          <text x="375" y="200" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">• MembershipModal.jsx</text>
+
+          <rect x="520" y="110" width="200" height="150" rx="6" fill="#1E293B" stroke="#334155"/>
+          <text x="620" y="135" fill="#F8FAFC" font-family="Sora" font-size="12" font-weight="bold" text-anchor="middle">Services & State</text>
+          <text x="620" y="160" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">• api.js (Axios Instance)</text>
+          <text x="620" y="180" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">• useAuthStore (Zustand)</text>
+          <text x="620" y="200" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">• Razorpay SDK Bridge</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- 5. Backend Architecture -->
+    <section id="backend-arch" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">05.</span> Backend Architecture</h2>
+      </div>
+      <p>The Express.js server implements an asynchronous controller-service pattern with centralized error handling via <code>asyncHandler</code> and <code>ApiError</code> abstractions.</p>
+
+      <div class="diagram-container">
+        <svg width="750" height="320" viewBox="0 0 750 320" fill="none">
+          <rect width="750" height="320" rx="12" fill="#090D16"/>
+
+          <rect x="40" y="40" width="180" height="240" rx="8" fill="#1E293B" stroke="#2563EB"/>
+          <text x="130" y="70" fill="#60A5FA" font-family="Sora" font-size="13" font-weight="bold" text-anchor="middle">Express Routes</text>
+          <text x="130" y="100" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">/user.routes.js</text>
+          <text x="130" y="125" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">/video.routes.js</text>
+          <text x="130" y="150" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">/payment.routes.js</text>
+          <text x="130" y="175" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">/membership.routes.js</text>
+          <text x="130" y="200" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">/tweet.routes.js</text>
+
+          <rect x="285" y="40" width="180" height="240" rx="8" fill="#1E293B" stroke="#10B981"/>
+          <text x="375" y="70" fill="#34D399" font-family="Sora" font-size="13" font-weight="bold" text-anchor="middle">Controllers</text>
+          <text x="375" y="100" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">user.controller.js</text>
+          <text x="375" y="125" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">video.controller.js</text>
+          <text x="375" y="150" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">payment.controller.js</text>
+          <text x="375" y="175" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">membership.controller.js</text>
+
+          <rect x="530" y="40" width="180" height="240" rx="8" fill="#1E293B" stroke="#F59E0B"/>
+          <text x="620" y="70" fill="#FBBF24" font-family="Sora" font-size="13" font-weight="bold" text-anchor="middle">Utilities & Services</text>
+          <text x="620" y="100" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">cloudinary.js (Multer)</text>
+          <text x="620" y="125" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">auth.middleware.js</text>
+          <text x="620" y="150" fill="#94A3B8" font-family="Inter" font-size="11" text-anchor="middle">errorHandler.middleware.js</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- 6. Database Design (ERD) -->
+    <section id="database-design" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">06.</span> Database Design (ER Diagram)</h2>
+      </div>
+      <p>The MongoDB database contains 10 primary collections with indexed references ensuring relational integrity across users, memberships, and videos.</p>
+
+      <div class="diagram-container">
+        <svg width="780" height="380" viewBox="0 0 780 380" fill="none">
+          <rect width="780" height="380" rx="12" fill="#090D16"/>
+
+          <!-- User Model -->
+          <rect x="30" y="40" width="200" height="140" rx="6" fill="#1E293B" stroke="#38BDF8"/>
+          <text x="130" y="65" fill="#38BDF8" font-family="Sora" font-size="13" font-weight="bold" text-anchor="middle">User Collection</text>
+          <text x="45" y="90" fill="#94A3B8" font-family="Fira Code" font-size="11">_id: ObjectId (PK)</text>
+          <text x="45" y="110" fill="#94A3B8" font-family="Fira Code" font-size="11">username: String (Idx)</text>
+          <text x="45" y="130" fill="#94A3B8" font-family="Fira Code" font-size="11">email: String (Idx)</text>
+          <text x="45" y="150" fill="#94A3B8" font-family="Fira Code" font-size="11">avatar, coverImage: String</text>
+
+          <!-- Video Model -->
+          <rect x="290" y="40" width="200" height="140" rx="6" fill="#1E293B" stroke="#10B981"/>
+          <text x="390" y="65" fill="#34D399" font-family="Sora" font-size="13" font-weight="bold" text-anchor="middle">Video Collection</text>
+          <text x="305" y="90" fill="#94A3B8" font-family="Fira Code" font-size="11">_id: ObjectId (PK)</text>
+          <text x="305" y="110" fill="#94A3B8" font-family="Fira Code" font-size="11">owner: Ref(User)</text>
+          <text x="305" y="130" fill="#94A3B8" font-family="Fira Code" font-size="11">visibility: Enum</text>
+          <text x="305" y="150" fill="#94A3B8" font-family="Fira Code" font-size="11">minimumTier: Ref(Tier)</text>
+
+          <!-- MembershipTier Model -->
+          <rect x="550" y="40" width="200" height="140" rx="6" fill="#1E293B" stroke="#F59E0B"/>
+          <text x="650" y="65" fill="#FBBF24" font-family="Sora" font-size="13" font-weight="bold" text-anchor="middle">MembershipTier</text>
+          <text x="565" y="90" fill="#94A3B8" font-family="Fira Code" font-size="11">_id: ObjectId (PK)</text>
+          <text x="565" y="110" fill="#94A3B8" font-family="Fira Code" font-size="11">creator: Ref(User)</text>
+          <text x="565" y="130" fill="#94A3B8" font-family="Fira Code" font-size="11">price: Number (INR)</text>
+          <text x="565" y="150" fill="#94A3B8" font-family="Fira Code" font-size="11">rank: Number (1,2,3)</text>
+
+          <!-- Membership Model -->
+          <rect x="290" y="210" width="200" height="140" rx="6" fill="#1E293B" stroke="#EF4444"/>
+          <text x="390" y="235" fill="#F87171" font-family="Sora" font-size="13" font-weight="bold" text-anchor="middle">Membership Collection</text>
+          <text x="305" y="260" fill="#94A3B8" font-family="Fira Code" font-size="11">_id: ObjectId (PK)</text>
+          <text x="305" y="280" fill="#94A3B8" font-family="Fira Code" font-size="11">subscriber, creator: Ref(User)</text>
+          <text x="305" y="300" fill="#94A3B8" font-family="Fira Code" font-size="11">tier: Ref(Tier)</text>
+          <text x="305" y="320" fill="#94A3B8" font-family="Fira Code" font-size="11">status: Enum (ACTIVE...)</text>
+
+          <!-- Relationship Lines -->
+          <line x1="230" y1="110" x2="290" y2="110" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="4"/>
+          <line x1="490" y1="110" x2="550" y2="110" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="4"/>
+          <line x1="390" y1="180" x2="390" y2="210" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="4"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- 7. Authentication Flow -->
+    <section id="auth-flow" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">07.</span> Authentication Flow</h2>
+      </div>
+      <p>Authentication utilizes Dual JWT Tokens (AccessToken in HTTP-Only cookies/bearer headers + RefreshToken stored in Database).</p>
+
+      <div class="diagram-container">
+        <svg width="750" height="280" viewBox="0 0 750 280" fill="none">
+          <rect width="750" height="280" rx="12" fill="#090D16"/>
+
+          <text x="80" y="30" fill="#38BDF8" font-family="Sora" font-size="12" font-weight="bold">Client (React)</text>
+          <line x1="120" y1="45" x2="120" y2="250" stroke="#334155" stroke-width="1.5" stroke-dasharray="4"/>
+
+          <text x="375" y="30" fill="#60A5FA" font-family="Sora" font-size="12" font-weight="bold" text-anchor="middle">Express Auth Controller</text>
+          <line x1="375" y1="45" x2="375" y2="250" stroke="#334155" stroke-width="1.5" stroke-dasharray="4"/>
+
+          <text x="630" y="30" fill="#34D399" font-family="Sora" font-size="12" font-weight="bold" text-anchor="middle">MongoDB (User Doc)</text>
+          <line x1="630" y1="45" x2="630" y2="250" stroke="#334155" stroke-width="1.5" stroke-dasharray="4"/>
+
+          <!-- Step 1 -->
+          <path d="M 120 70 L 375 70" stroke="#38BDF8" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <text x="245" y="65" fill="#94A3B8" font-family="Inter" font-size="10" text-anchor="middle">1. POST /api/v1/users/login (Credentials)</text>
+
+          <!-- Step 2 -->
+          <path d="M 375 100 L 630 100" stroke="#34D399" stroke-width="1.5" marker-end="url(#arrow)"/>
+          <text x="500" y="95" fill="#94A3B8" font-family="Inter" font-size="10" text-anchor="middle">2. Verify bcrypt password hash</text>
+
+          <!-- Step 3 -->
+          <path d="M 630 140 L 375 140" stroke="#34D399" stroke-width="1.5"/>
+          <text x="500" y="135" fill="#94A3B8" font-family="Inter" font-size="10" text-anchor="middle">3. Save generated RefreshToken to DB</text>
+
+          <!-- Step 4 -->
+          <path d="M 375 180 L 120 180" stroke="#38BDF8" stroke-width="1.5"/>
+          <text x="245" y="175" fill="#94A3B8" font-family="Inter" font-size="10" text-anchor="middle">4. Return AccessToken + RefreshToken Cookie</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- 8. Video Upload & Playback -->
+    <section id="video-flow" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">08.</span> Video Upload & Playback Flow</h2>
+      </div>
+      <p>Video uploads use Multer temporary disk storage, streamed to Cloudinary via chunking, and saved into MongoDB with permission flags.</p>
+    </section>
+
+    <!-- 9. Community Architecture -->
+    <section id="community-arch" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">09.</span> Community Architecture</h2>
+      </div>
+      <p>Community posts (Tweets and Editable Polls) operate over REST API endpoints (<code>/api/v1/tweets</code>). Embedded poll metadata is serialized into JSON payloads and managed dynamically on the client side.</p>
+      
+      <div class="callout">
+        <div class="callout-title">Architecture Note: Real-Time WebSockets</div>
+        <p>Current community updates operate via optimistic REST API polling. WebSockets (Socket.io) are documented under Section 19 (Future Enhancements).</p>
+      </div>
+    </section>
+
+    <!-- 10. AI Architecture -->
+    <section id="ai-arch" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">10.</span> AI Microservice Architecture</h2>
+      </div>
+      <p>The AI Microservice runs on FastAPI (port 8001) using non-blocking asynchronous execution (<code>asyncio.to_thread</code>) with <code>gemini-2.5-flash</code> as primary model and <code>gemini-3.5-flash-lite</code> as fallback model.</p>
+    </section>
+
+    <!-- 11. Membership & Payment Architecture -->
+    <section id="membership-arch" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">11.</span> Membership & Payment Architecture</h2>
+      </div>
+      <p>Creator memberships use Razorpay Orders API with server-side HMAC-SHA256 signature verification and webhook integration.</p>
+    </section>
+
+    <!-- 12. Protected Content Access -->
+    <section id="access-control" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">12.</span> Members-Only Content Access Control</h2>
+      </div>
+      <p>Backend enforces strict authorization rules: unauthorized users requesting <code>MEMBERS_ONLY</code> or <code>TIER_ONLY</code> videos receive <code>videoFile: null</code> in the JSON payload.</p>
+    </section>
+
+    <!-- 13. API Architecture -->
+    <section id="api-arch" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">13.</span> API Route Directory</h2>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>Method</th>
+            <th>Endpoint</th>
+            <th>Auth Required</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Auth</td>
+            <td>POST</td>
+            <td>/api/v1/users/register</td>
+            <td>No</td>
+            <td>Register new user account</td>
+          </tr>
+          <tr>
+            <td>Auth</td>
+            <td>POST</td>
+            <td>/api/v1/users/login</td>
+            <td>No</td>
+            <td>Verify credentials & issue JWT tokens</td>
+          </tr>
+          <tr>
+            <td>Videos</td>
+            <td>GET</td>
+            <td>/api/v1/videos</td>
+            <td>No</td>
+            <td>Fetch paginated video list</td>
+          </tr>
+          <tr>
+            <td>Videos</td>
+            <td>POST</td>
+            <td>/api/v1/videos</td>
+            <td>Yes</td>
+            <td>Upload video file & thumbnail</td>
+          </tr>
+          <tr>
+            <td>AI Generator</td>
+            <td>POST</td>
+            <td>http://localhost:8001/api/v1/generate/video-titles</td>
+            <td>No</td>
+            <td>Generate 5 AI YouTube titles</td>
+          </tr>
+          <tr>
+            <td>Payments</td>
+            <td>POST</td>
+            <td>/api/v1/payments/verify</td>
+            <td>Yes</td>
+            <td>Verify HMAC signature & activate membership</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 14. Deployment -->
+    <section id="deployment" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">14.</span> Deployment Architecture</h2>
+      </div>
+      <p>Drishya supports containerized and multi-node cloud deployments (e.g. Vercel for Frontend, Render/AWS EC2 for Node Backend, and Railway/DigitalOcean for FastAPI AI microservice).</p>
+    </section>
+
+    <!-- 15. Security -->
+    <section id="security" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">15.</span> Security Architecture</h2>
+      </div>
+      <ul>
+        <li><strong>Password Protection:</strong> Hashed using bcrypt with salt factor 10.</li>
+        <li><strong>JWT Token Guards:</strong> AccessTokens expire in 1 day; RefreshTokens stored securely in DB.</li>
+        <li><strong>HMAC Signature Verification:</strong> Payments verified server-side using <code>crypto.createHmac('sha256')</code>.</li>
+        <li><strong>CORS Hardening:</strong> Configured for specified origins (e.g. <code>http://localhost:3000</code>).</li>
+      </ul>
+    </section>
+
+    <!-- 16. Directory Structure -->
+    <section id="project-structure" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">16.</span> Directory Structure</h2>
+      </div>
+      <pre>
+Drishya/
+├── frontend/
+│   ├── src/
+│   │   ├── components/  # PollCard.jsx, CommunityTab.jsx, MembershipModal.jsx
+│   │   ├── pages/       # Home.jsx, Watch.jsx, Channel.jsx, Upload.jsx
+│   │   ├── services/    # api.js (Axios)
+│   │   └── hooks/       # useAuth.js
+├── backend/
+│   ├── controllers/     # user, video, payment, membership controllers
+│   ├── models/          # User, Video, Membership, MembershipTier schemas
+│   ├── routes/          # Express route definitions
+│   └── utils/           # cloudinary.js, asyncHandler.js
+└── ai-service/
+    ├── services/        # gemini_service.py (Gemini 2.5 Flash)
+    ├── routes/          # generator_routes.py
+    └── main.py          # FastAPI application entrypoint
+      </pre>
+    </section>
+
+    <!-- 17. Data Flow Diagrams -->
+    <section id="data-flows" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">17.</span> Key Data Flow Diagrams</h2>
+      </div>
+      <p>Illustrating end-to-end data flows across major application workflows.</p>
+    </section>
+
+    <!-- 18. Master Architecture Diagram -->
+    <section id="master-arch" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">18.</span> Complete End-to-End Master Diagram</h2>
+      </div>
+      <div class="diagram-container">
+        <svg width="780" height="300" viewBox="0 0 780 300" fill="none">
+          <rect width="780" height="300" rx="12" fill="#090D16"/>
+          <text x="390" y="40" fill="#38BDF8" font-family="Sora" font-size="14" font-weight="bold" text-anchor="middle">DRISHYA MASTER ECOSYSTEM</text>
+          
+          <rect x="50" y="100" width="140" height="120" rx="8" fill="#1E293B" stroke="#38BDF8"/>
+          <text x="120" y="140" fill="#38BDF8" font-family="Sora" font-size="12" font-weight="bold" text-anchor="middle">Client Tier</text>
+          <text x="120" y="165" fill="#94A3B8" font-family="Inter" font-size="10" text-anchor="middle">React 18 SPA</text>
+
+          <rect x="250" y="100" width="140" height="120" rx="8" fill="#1E293B" stroke="#2563EB"/>
+          <text x="320" y="140" fill="#60A5FA" font-family="Sora" font-size="12" font-weight="bold" text-anchor="middle">API Gateway</text>
+          <text x="320" y="165" fill="#94A3B8" font-family="Inter" font-size="10" text-anchor="middle">Express Server</text>
+
+          <rect x="450" y="100" width="140" height="120" rx="8" fill="#1E293B" stroke="#8B5CF6"/>
+          <text x="520" y="140" fill="#A78BFA" font-family="Sora" font-size="12" font-weight="bold" text-anchor="middle">AI Service</text>
+          <text x="520" y="165" fill="#94A3B8" font-family="Inter" font-size="10" text-anchor="middle">FastAPI + Gemini</text>
+
+          <rect x="630" y="100" width="120" height="120" rx="8" fill="#1E293B" stroke="#10B981"/>
+          <text x="690" y="140" fill="#34D399" font-family="Sora" font-size="12" font-weight="bold" text-anchor="middle">Data Stores</text>
+          <text x="690" y="165" fill="#94A3B8" font-family="Inter" font-size="10" text-anchor="middle">MongoDB / Cloudinary</text>
+
+          <line x1="190" y1="160" x2="250" y2="160" stroke="#38BDF8" stroke-width="2"/>
+          <line x1="390" y1="160" x2="450" y2="160" stroke="#2563EB" stroke-width="2"/>
+          <line x1="590" y1="160" x2="630" y2="160" stroke="#8B5CF6" stroke-width="2"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- 19. Scalability & Future Improvements -->
+    <section id="future-enhancements" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">19.</span> Future Enhancements</h2>
+      </div>
+      <div class="callout future">
+        <div class="callout-title">Roadmap & Future Enhancements</div>
+        <ul>
+          <li><strong>Socket.io Integration:</strong> Real-time notifications for live votes, comments, and creator streams.</li>
+          <li><strong>Redis Caching:</strong> Cache video metadata, creator tier listings, and user session permissions.</li>
+          <li><strong>Background Task Workers (Celery/BullMQ):</strong> Asynchronous video transcoding and HLS stream generation.</li>
+          <li><strong>Vector RAG Search:</strong> FAISS + LangChain integration for semantic video content search.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 20. How Drishya Works -->
+    <section id="developer-guide" class="hld-section">
+      <div class="section-header">
+        <h2 class="section-title"><span class="section-num">20.</span> "How Drishya Works" — Developer Onboarding</h2>
+      </div>
+      <p>A quick 4-step mental model for developers new to the Drishya repository:</p>
+
+      <ol>
+        <li><strong>Client App Initialization:</strong> React SPA initializes at <code>http://localhost:3000</code>, checks JWT auth state via <code>useAuthStore</code>, and renders custom navigation.</li>
+        <li><strong>Request Processing:</strong> API requests route to Node/Express backend at <code>http://localhost:8000/api/v1</code>. Auth middleware validates tokens against MongoDB Atlas.</li>
+        <li><strong>AI Microservice Operations:</strong> Creators requesting AI title/content generation trigger async requests to FastAPI at <code>http://localhost:8001/api/v1/generate/*</code> which queries Gemini 2.5 Flash.</li>
+        <li><strong>Monetization & Access Guard:</strong> Creators define tiers via Razorpay. When users request protected videos, backend checks active membership records in MongoDB before serving media stream URLs.</li>
+      </ol>
+    </section>
+
+  </main>
+
+  <button class="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Back to top">↑</button>
+
+  <script>
+    function toggleTheme() {
+      const body = document.body;
+      const current = body.getAttribute('data-theme');
+      if (current === 'light') {
+        body.setAttribute('data-theme', 'dark');
+        document.getElementById('themeIcon').textContent = '🌙';
+        document.getElementById('themeText').textContent = 'Dark Mode';
+      } else {
+        body.setAttribute('data-theme', 'light');
+        document.getElementById('themeIcon').textContent = '☀️';
+        document.getElementById('themeText').textContent = 'Light Mode';
+      }
+    }
+
+    function filterNav() {
+      const input = document.getElementById('searchInput').value.toLowerCase();
+      const items = document.querySelectorAll('.nav-item');
+      items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(input)) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    // Scroll active link highlight
+    window.addEventListener('scroll', () => {
+      let current = '';
+      const sections = document.querySelectorAll('section.hld-section');
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        if (pageYOffset >= sectionTop - 150) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      const navLinks = document.querySelectorAll('.nav-list a');
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) {
+          link.classList.add('active');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
