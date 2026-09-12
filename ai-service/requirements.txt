@@ -5,3 +5,4 @@ google-generativeai>=0.4.1
 pydantic==2.5.0
 pydantic-settings==2.1.0
 aiohttp==3.9.1
+fal-client>=0.4.0

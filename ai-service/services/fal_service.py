@@ -1,7 +1,11 @@
 import os
 import logging
 import urllib.parse
-import fal_client
+
+try:
+    import fal_client
+except ImportError:
+    fal_client = None
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +39,8 @@ class FalAIService:
             f"aspect ratio 16:9, designed to increase click-through rate."
         )
         
-        # Try Fal.ai first if API key is set
-        if self.api_key:
+        # Try Fal.ai first if API key is set and fal_client is imported
+        if self.api_key and fal_client is not None:
             try:
                 logger.info(f"Generating image on Fal.ai with prompt: {prompt}")
                 result = fal_client.subscribe(

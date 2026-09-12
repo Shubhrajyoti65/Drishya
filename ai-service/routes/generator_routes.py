@@ -155,12 +155,15 @@ def create_generator_routes(gemini_service, fal_service):
         if fal_service and fal_service.api_key:
             try:
                 import asyncio
-                # Run the blocking Fal.ai network call in a separate thread
-                image_url = await asyncio.to_thread(
-                    fal_service.generate_thumbnail_image,
-                    topic=request.topic,
-                    category=request.category,
-                    mood=request.mood
+                # Run the blocking Fal.ai network call with a 4-second timeout
+                image_url = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        fal_service.generate_thumbnail_image,
+                        topic=request.topic,
+                        category=request.category,
+                        mood=request.mood
+                    ),
+                    timeout=4.0
                 )
                 suggestions = [
                     {

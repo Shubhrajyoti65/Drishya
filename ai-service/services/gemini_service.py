@@ -18,32 +18,28 @@ class GeminiAIService:
             raise ValueError("GEMINI_API_KEY environment variable not set")
         
         genai.configure(api_key=api_key)
-        self.primary_model = genai.GenerativeModel("gemini-2.0-flash")
-        self.fallback_model = genai.GenerativeModel("gemini-2.0-flash-lite")
+        self.primary_model = genai.GenerativeModel("gemini-2.5-flash")
+        self.fallback_model = genai.GenerativeModel("gemini-3.5-flash-lite")
 
     async def _generate_with_fallback(self, prompt: str) -> str:
-        """Generate content using primary model, with automatic rate limit backoff and fallback if quota is exceeded"""
-        for attempt in range(2):
+        """Generate content using primary model without blocking event loop, with automatic fallback"""
+        try:
+            response = await asyncio.wait_for(
+                asyncio.to_thread(self.primary_model.generate_content, prompt),
+                timeout=3.5
+            )
+            return response.text
+        except Exception as e:
+            logger.warning(f"Primary Gemini model failed or timed out ({str(e)}). Attempting fallback model gemini-2.5-flash-lite...")
             try:
-                response = self.primary_model.generate_content(prompt)
+                response = await asyncio.wait_for(
+                    asyncio.to_thread(self.fallback_model.generate_content, prompt),
+                    timeout=3.5
+                )
                 return response.text
-            except Exception as e:
-                err_str = str(e).lower()
-                if ("quota" in err_str or "429" in err_str or "limit" in err_str) and attempt == 0:
-                    logger.warning("Gemini rate limit hit (429). Waiting 9 seconds for cooldown and retrying...")
-                    await asyncio.sleep(9)
-                    continue
-
-                if "quota" in err_str or "429" in err_str or "limit" in err_str:
-                    logger.warning("Primary model failed. Retrying with fallback model (gemini-2.0-flash-lite)...")
-                    try:
-                        response = self.fallback_model.generate_content(prompt)
-                        return response.text
-                    except Exception as fallback_err:
-                        logger.error(f"Fallback model also failed: {str(fallback_err)}")
-                        raise fallback_err
-                else:
-                    raise e
+            except Exception as fallback_err:
+                logger.error(f"Fallback model also failed: {str(fallback_err)}")
+                raise fallback_err
 
     async def generate_video_titles(
         self,
@@ -85,17 +81,15 @@ class GeminiAIService:
 
         except Exception as e:
             logger.error(f"Error generating video titles: {str(e)}")
-            if "quota" in str(e).lower() or "429" in str(e) or "limit" in str(e):
-                logger.info("Gemini API quota reached. Returning topic-customized offline template titles.")
-                aud = target_audience or "Viewers"
-                return [
-                    f"Mastering {topic}: The Complete Guide for {aud}",
-                    f"10 Essential Things You MUST Know About {topic}",
-                    f"How to Get Started with {topic} ({niche}) - Step-by-Step",
-                    f"The Ultimate Strategy for {topic} in 2026",
-                    f"Why Every {aud} Needs to Learn {topic} Today"
-                ]
-            raise
+            logger.info("Returning topic-customized fallback template titles.")
+            aud = target_audience or "Viewers"
+            return [
+                f"Mastering {topic}: The Complete Guide for {aud}",
+                f"10 Essential Things You MUST Know About {topic}",
+                f"How to Get Started with {topic} ({niche}) - Step-by-Step",
+                f"The Ultimate Strategy for {topic} in 2026",
+                f"Why Every {aud} Needs to Learn {topic} Today"
+            ]
 
     async def generate_content_ideas(
         self,
@@ -146,32 +140,30 @@ class GeminiAIService:
 
         except Exception as e:
             logger.error(f"Error generating content ideas: {str(e)}")
-            if "quota" in str(e).lower() or "429" in str(e) or "limit" in str(e):
-                logger.info("Gemini API quota reached. Returning niche-customized offline template content ideas.")
-                aud = target_audience or "your audience"
-                return [
-                    {
-                        "title": f"Complete Beginner's Roadmap to {niche}",
-                        "description": f"A comprehensive step-by-step breakdown covering essential {niche} principles tailored for {aud}."
-                    },
-                    {
-                        "title": f"5 Major Mistakes to Avoid in {niche}",
-                        "description": f"Identify key errors and actionable strategies to help {aud} succeed faster in {niche}."
-                    },
-                    {
-                        "title": f"Deep Dive: Top Trends and Tools in {niche} for 2026",
-                        "description": f"An insightful analysis of the latest tools and industry shifts every {niche} creator should know."
-                    },
-                    {
-                        "title": f"Hands-On Masterclass: Building a Real-World {niche} Project",
-                        "description": f"A practical walkthrough demonstrating how to take ideas from concept to completion."
-                    },
-                    {
-                        "title": f"The Future of {niche}: What's Next?",
-                        "description": f"Forward-looking predictions and expert insights into upcoming developments in {niche}."
-                    }
-                ]
-            raise
+            logger.info("Returning niche-customized fallback template content ideas.")
+            aud = target_audience or "your audience"
+            return [
+                {
+                    "title": f"Complete Beginner's Roadmap to {niche}",
+                    "description": f"A comprehensive step-by-step breakdown covering essential {niche} principles tailored for {aud}."
+                },
+                {
+                    "title": f"5 Major Mistakes to Avoid in {niche}",
+                    "description": f"Identify key errors and actionable strategies to help {aud} succeed faster in {niche}."
+                },
+                {
+                    "title": f"Deep Dive: Top Trends and Tools in {niche} for 2026",
+                    "description": f"An insightful analysis of the latest tools and industry shifts every {niche} creator should know."
+                },
+                {
+                    "title": f"Hands-On Masterclass: Building a Real-World {niche} Project",
+                    "description": f"A practical walkthrough demonstrating how to take ideas from concept to completion."
+                },
+                {
+                    "title": f"The Future of {niche}: What's Next?",
+                    "description": f"Forward-looking predictions and expert insights into upcoming developments in {niche}."
+                }
+            ]
 
     async def generate_thumbnail_suggestions(
         self,
@@ -212,7 +204,24 @@ class GeminiAIService:
 
         except Exception as e:
             logger.error(f"Error generating thumbnail suggestions: {str(e)}")
-            raise
+            logger.info("Returning category-customized fallback thumbnail suggestions.")
+            return [
+                {
+                    "text": f"MASTER {topic.upper()} NOW!",
+                    "colors": "Bold Neon Blue & Dark Navy background",
+                    "layout": "High-contrast text on left, close-up subject visual on right"
+                },
+                {
+                    "text": "THE SECRET REVEALED",
+                    "colors": "Vibrant Yellow text on Dark Purple gradient",
+                    "layout": "Centered bold typography with dynamic background element"
+                },
+                {
+                    "text": f"STOP DOING THIS ({category})",
+                    "colors": "Bright Red warning banner with White text",
+                    "layout": "Split-screen comparison layout with directional arrow"
+                }
+            ]
 
     @staticmethod
     def _extract_json(text: str) -> str:
