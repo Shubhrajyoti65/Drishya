@@ -25,6 +25,14 @@ export default function CommunityTab({ channelId, isOwner }) {
   const [tweets, setTweets] = useState([])
   const [newTweetContent, setNewTweetContent] = useState('')
   const [showPollEditor, setShowPollEditor] = useState(false)
+  const [pollData, setPollData] = useState({
+    question: 'What type of video content should we produce next week?',
+    options: [
+      'Option A: Detailed Technical Breakdown',
+      'Option B: Fast-Paced Cinematic Summary',
+      'Option C: Interactive Q&A Live Session'
+    ]
+  })
   const [editingTweetId, setEditingTweetId] = useState(null)
   const [editingContent, setEditingContent] = useState('')
   const [loading, setLoading] = useState(false)
@@ -33,10 +41,28 @@ export default function CommunityTab({ channelId, isOwner }) {
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
 
+  const parseTweetContent = (rawContent) => {
+    if (!rawContent) return { text: '', poll: null }
+    const pollRegex = /\[POLL:(.*?)\]$/s
+    const match = rawContent.match(pollRegex)
+    if (match) {
+      try {
+        const poll = JSON.parse(match[1])
+        const text = rawContent.replace(pollRegex, '').trim()
+        return { text, poll }
+      } catch (err) {
+        console.error('Error parsing poll JSON:', err)
+      }
+    }
+    return { text: rawContent, poll: null }
+  }
+
   const fetchTweets = async (pageNum = 1, append = false) => {
     try {
       setLoading(true)
-      const response = await tweetAPI.getUserTweets(channelId, pageNum, 10)
+      const response = channelId
+        ? await tweetAPI.getUserTweets(channelId, pageNum, 10)
+        : await tweetAPI.getAllTweets(pageNum, 10)
       const fetchedTweets = response.data?.data?.tweets || []
       const pagination = response.data?.data?.pagination || {}
 
@@ -57,10 +83,8 @@ export default function CommunityTab({ channelId, isOwner }) {
   }
 
   useEffect(() => {
-    if (channelId) {
-      fetchTweets(1, false)
-      setPage(1)
-    }
+    fetchTweets(1, false)
+    setPage(1)
   }, [channelId])
 
   const handleLoadMore = () => {
@@ -75,12 +99,29 @@ export default function CommunityTab({ channelId, isOwner }) {
 
     try {
       setSubmitting(true)
-      const response = await tweetAPI.createTweet(newTweetContent)
+      let finalContent = newTweetContent.trim()
+      if (showPollEditor && pollData.options.some((o) => o.trim())) {
+        const cleanPoll = {
+          question: pollData.question.trim() || 'Creator Discussion Poll',
+          options: pollData.options.filter((o) => o.trim())
+        }
+        finalContent += `\n\n[POLL:${JSON.stringify(cleanPoll)}]`
+      }
+
+      const response = await tweetAPI.createTweet(finalContent)
       const createdTweet = response.data.data
 
       setTweets((prev) => [createdTweet, ...prev])
       setNewTweetContent('')
       setShowPollEditor(false)
+      setPollData({
+        question: 'What type of video content should we produce next week?',
+        options: [
+          'Option A: Detailed Technical Breakdown',
+          'Option B: Fast-Paced Cinematic Summary',
+          'Option C: Interactive Q&A Live Session'
+        ]
+      })
       setError(null)
     } catch (err) {
       console.error('Error creating post:', err)
@@ -202,7 +243,14 @@ export default function CommunityTab({ channelId, isOwner }) {
                 className="w-full bg-gray-50 dark:bg-[#161B22] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-royalBlue/50 resize-none text-sm transition"
               />
 
-              {showPollEditor && <PollCard pollQuestion={newTweetContent || "Creator Discussion Poll"} />}
+              {showPollEditor && (
+                <PollCard
+                  isEditing={true}
+                  pollData={pollData}
+                  onChange={setPollData}
+                  onRemove={() => setShowPollEditor(false)}
+                />
+              )}
 
               <div className="flex items-center justify-between pt-1">
                 <div className="flex items-center gap-2">
@@ -248,6 +296,8 @@ export default function CommunityTab({ channelId, isOwner }) {
         ) : (
           tweets.map((tweet) => {
             const isEditing = editingTweetId === tweet._id
+            const { text: cleanText, poll: embeddedPoll } = parseTweetContent(tweet.content)
+
             return (
               <div key={tweet._id} className="p-6 rounded-3xl bg-white dark:bg-communityDarkCard border border-gray-200 dark:border-gray-800/80 shadow-premium hover:shadow-premium-hover transition-all duration-300">
                 <div className="flex gap-3.5">
@@ -322,9 +372,18 @@ export default function CommunityTab({ channelId, isOwner }) {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-sans whitespace-pre-wrap mb-4">
-                        {tweet.content}
-                      </p>
+                      <>
+                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-sans whitespace-pre-wrap mb-4">
+                          {cleanText}
+                        </p>
+                        {embeddedPoll && (
+                          <PollCard
+                            isEditing={false}
+                            pollQuestion={embeddedPoll.question}
+                            options={embeddedPoll.options}
+                          />
+                        )}
+                      </>
                     )}
 
                     {/* Actions Bar */}
@@ -375,34 +434,7 @@ export default function CommunityTab({ channelId, isOwner }) {
         )}
       </div>
 
-      {/* FEATURED CREATOR COMMUNITIES CARDS */}
-      <div className="pt-8 space-y-4">
-        <h3 className="font-sora font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-royalBlue" />
-          <span>Recommended Communities</span>
-        </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <CommunityCard
-            community={{
-              name: 'Drishya AI Creators Hub',
-              members: '28.4K',
-              activity: 'Active 2m ago',
-              description: 'Official creator network for discussing AI workflows, prompts, and thumbnail techniques.',
-              image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80'
-            }}
-          />
-          <CommunityCard
-            community={{
-              name: 'Tech & Video Production',
-              members: '19.1K',
-              activity: 'Active 12m ago',
-              description: 'Hardware reviews, camera setups, editing shortcuts, and video growth strategies.',
-              image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&auto=format&fit=crop&q=80'
-            }}
-          />
-        </div>
-      </div>
     </div>
   )
 }

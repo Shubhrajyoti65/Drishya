@@ -1,7 +1,9 @@
 import { useParams, Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { videoAPI, commentAPI, likeAPI } from '../services/api'
+import { videoAPI, commentAPI, likeAPI, membershipTierAPI, subscriptionAPI } from '../services/api'
 import VideoCard from '../components/VideoCard'
+import MemberBadge from '../components/MemberBadge'
+import MembershipModal from '../components/MembershipModal'
 import { 
   ThumbsUp, 
   MessageSquare, 
@@ -15,7 +17,9 @@ import {
   Eye,
   Clock,
   ChevronDown,
-  CheckCircle2
+  CheckCircle2,
+  Lock,
+  Crown
 } from 'lucide-react'
 
 export default function Watch() {
@@ -30,6 +34,10 @@ export default function Watch() {
   const [loading, setLoading] = useState(true)
   const [showAiSummary, setShowAiSummary] = useState(true)
 
+  // Membership modal trigger for locked video overlay
+  const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false)
+  const [creatorTiers, setCreatorTiers] = useState([])
+
   useEffect(() => {
     const fetchVideoData = async () => {
       try {
@@ -37,7 +45,31 @@ export default function Watch() {
         const response = await videoAPI.getVideoById(videoId)
         const videoData = response?.data?.data?.[0] || response?.data?.data
         setVideo(videoData)
-        setLikeCount(videoData?.views || 12)
+        // Fetch creator membership tiers if locked
+        if (videoData?.owner?._id) {
+          try {
+            const tiersRes = await membershipTierAPI.getCreatorTiers(videoData.owner._id)
+            setCreatorTiers(tiersRes.data.data || [])
+          } catch (e) {
+            console.error('Failed to fetch creator tiers:', e)
+          }
+
+          // Check channel subscription status
+          try {
+            const subRes = await subscriptionAPI.checkSubscription(videoData.owner._id)
+            setIsSubscribed(subRes?.data?.data?.isSubscribed || false)
+          } catch (e) {
+            // silent fallback
+          }
+        }
+
+        // Fetch real video likes count
+        try {
+          const likesRes = await likeAPI.getVideoLikes(videoId)
+          setLikeCount(likesRes?.data?.data?.likeCount || 0)
+        } catch (e) {
+          setLikeCount(0)
+        }
 
         // Fetch comments
         try {
@@ -77,11 +109,35 @@ export default function Watch() {
   const handleToggleLike = async () => {
     try {
       const response = await likeAPI.toggleVideoLike(videoId)
-      const likedState = response?.data?.data?.liked
-      setIsLiked(likedState)
-      setLikeCount(prev => (likedState ? prev + 1 : Math.max(0, prev - 1)))
+      const { liked, likeCount: updatedCount } = response?.data?.data || {}
+      setIsLiked(liked)
+      if (typeof updatedCount === 'number') {
+        setLikeCount(updatedCount)
+      } else {
+        setLikeCount(prev => (liked ? prev + 1 : Math.max(0, prev - 1)))
+      }
     } catch (error) {
       console.error('Error toggling like:', error)
+    }
+  }
+
+  const handleToggleSubscribe = async () => {
+    if (!video?.owner?._id) return
+    try {
+      const response = await subscriptionAPI.toggleSubscription(video.owner._id)
+      const subState = response?.data?.data?.subscribed
+      setIsSubscribed(subState)
+      setVideo(prev => ({
+        ...prev,
+        owner: {
+          ...prev.owner,
+          subscribersCount: subState
+            ? (prev.owner?.subscribersCount || 0) + 1
+            : Math.max(0, (prev.owner?.subscribersCount || 1) - 1)
+        }
+      }))
+    } catch (error) {
+      console.error('Error toggling subscription:', error)
     }
   }
 
@@ -135,6 +191,8 @@ export default function Watch() {
     `Do you agree with the key points presented on ${video.title}?`
   ]
 
+  const isLocked = video.isAuthorized === false
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -142,15 +200,49 @@ export default function Watch() {
         {/* LEFT COLUMN: Main Video Player & Details */}
         <div className="lg:col-span-8 space-y-6">
           
-          {/* Cinematic Video Player */}
+          {/* Cinematic Video Player or Locked Overlay */}
           <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-black border border-gray-200 dark:border-gray-800 shadow-premium">
-            <video
-              src={video.videoFile}
-              controls
-              autoPlay
-              poster={video.thumbnail}
-              className="w-full h-full object-contain"
-            />
+            {isLocked ? (
+              <div className="relative w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-br from-gray-900 via-[#18181B] to-black">
+                {video.thumbnail && (
+                  <img src={video.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20 filter blur-sm" />
+                )}
+                
+                <div className="relative z-10 max-w-md space-y-4">
+                  <div className="w-16 h-16 rounded-3xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto shadow-lg">
+                    <Lock className="w-8 h-8" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-xs font-sora font-bold text-amber-400 uppercase tracking-wider">
+                      Exclusive Creator Content
+                    </span>
+                    <h3 className="font-sora font-extrabold text-xl sm:text-2xl text-white">
+                      Members Only Video
+                    </h3>
+                    <p className="text-xs text-gray-400 leading-relaxed">
+                      {video.accessReason || 'This video is available exclusively for channel members.'}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setIsMembershipModalOpen(true)}
+                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-sora font-bold text-xs shadow-lg shadow-blue-500/25 transition flex items-center gap-2 mx-auto"
+                  >
+                    <Crown className="w-4 h-4 fill-current" />
+                    <span>Join Channel Membership to Unlock</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <video
+                src={video.videoFile}
+                controls
+                autoPlay
+                poster={video.thumbnail}
+                className="w-full h-full object-contain"
+              />
+            )}
           </div>
 
           {/* Title & Metadata */}
@@ -179,11 +271,11 @@ export default function Watch() {
                     </Link>
                     <CheckCircle2 className="w-4 h-4 text-royalBlue fill-current" />
                   </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">12.4K Subscribers</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{video?.owner?.subscribersCount || 0} Subscribers</span>
                 </div>
 
                 <button
-                  onClick={() => setIsSubscribed(!isSubscribed)}
+                  onClick={handleToggleSubscribe}
                   className={`ml-3 px-4 py-2 rounded-xl font-sora font-semibold text-xs transition duration-200 shadow-sm ${
                     isSubscribed
                       ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
@@ -319,7 +411,7 @@ export default function Watch() {
               </button>
             </form>
 
-            {/* Comments List */}
+            {/* Comments List with Member Badges */}
             <div className="space-y-3">
               {comments.length === 0 ? (
                 <div className="text-center py-8 text-xs text-gray-400">
@@ -333,9 +425,15 @@ export default function Watch() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <span className="font-sora font-semibold text-xs text-gray-900 dark:text-white">
-                          {comment.owner?.username || 'User'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-sora font-semibold text-xs text-gray-900 dark:text-white">
+                            {comment.owner?.fullname || comment.owner?.username || 'User'}
+                          </span>
+                          {/* Member Badge Render */}
+                          {comment.owner?.memberBadge && (
+                            <MemberBadge badge={comment.owner.memberBadge} />
+                          )}
+                        </div>
                         <span className="text-[10px] text-gray-400">Recently</span>
                       </div>
                       <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
@@ -365,6 +463,19 @@ export default function Watch() {
         </div>
 
       </div>
+
+      {/* Membership Modal */}
+      <MembershipModal
+        isOpen={isMembershipModalOpen}
+        onClose={() => setIsMembershipModalOpen(false)}
+        creator={video.owner}
+        tiers={creatorTiers}
+        onSuccess={() => {
+          setIsMembershipModalOpen(false)
+          window.location.reload()
+        }}
+      />
+
     </div>
   )
 }

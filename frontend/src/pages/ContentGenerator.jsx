@@ -158,53 +158,53 @@ export default function ContentGenerator() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 relative">
       
       {/* SECTION 1: HERO LANDING BANNER (Dual Red & Blue Accent Gradient) */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blueAccent via-[#5B21B6] to-crimson text-white p-8 sm:p-12 shadow-premium">
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blueAccent via-[#5B21B6] to-crimson text-white p-6 sm:p-8 lg:p-10 shadow-premium">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
         
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-8 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs font-sora font-semibold tracking-wide">
-              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div className="lg:col-span-8 space-y-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-sora font-semibold tracking-wider text-amber-200">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
               <span>DRISHYA AI CREATIVE WORKSPACE</span>
             </div>
 
-            <h1 className="font-sora font-extrabold text-3xl sm:text-5xl leading-tight tracking-tight">
-              Create Smarter with AI.
+            <h1 className="font-sora font-semibold sm:font-bold text-2xl sm:text-4xl lg:text-[40px] tracking-tight leading-tight text-white">
+              Create <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-200 to-white">Smarter with AI.</span>
             </h1>
 
-            <p className="text-sm sm:text-base text-white/90 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-white/80 max-w-xl font-sora font-normal leading-relaxed">
               Supercharge your creative workflow. Generate 16:9 FLUX AI thumbnails, viral video titles, content roadmaps, and SEO strategies in seconds.
             </p>
 
-            <div className="flex flex-wrap gap-3 pt-2">
+            <div className="flex flex-wrap gap-2.5 pt-1">
               <button
                 onClick={() => setActiveTab('thumbnails')}
-                className="px-5 py-3 rounded-2xl bg-white text-gray-900 font-sora font-bold text-xs hover:bg-gray-100 transition shadow-lg flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl bg-white text-gray-900 font-sora font-semibold text-xs hover:bg-gray-100 transition shadow-md flex items-center gap-1.5"
               >
-                <ImageIcon className="w-4 h-4 text-crimson" />
+                <ImageIcon className="w-3.5 h-3.5 text-crimson" />
                 <span>FLUX Thumbnail Studio</span>
               </button>
 
               <button
                 onClick={() => setShowAiChat(!showAiChat)}
-                className="px-5 py-3 rounded-2xl bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/20 text-white font-sora font-bold text-xs transition flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 text-white font-sora font-semibold text-xs transition flex items-center gap-1.5"
               >
-                <Bot className="w-4 h-4 text-amber-300" />
+                <Bot className="w-3.5 h-3.5 text-amber-300" />
                 <span>{showAiChat ? 'Hide AI Copilot' : 'Open AI Copilot'}</span>
               </button>
             </div>
           </div>
 
           {/* AI Feature Cards Quick Switch */}
-          <div className="lg:col-span-4 grid grid-cols-2 gap-3">
-            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 space-y-1">
-              <Zap className="w-5 h-5 text-amber-300" />
-              <h4 className="font-sora font-bold text-xs">FLUX.1 [dev]</h4>
+          <div className="lg:col-span-4 grid grid-cols-2 gap-2.5">
+            <div className="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 space-y-1 hover:bg-white/15 transition">
+              <Zap className="w-4 h-4 text-amber-300" />
+              <h4 className="font-sora font-semibold text-xs">FLUX.1 [dev]</h4>
               <p className="text-[10px] text-white/70">8k Photo Realism</p>
             </div>
-            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 space-y-1">
-              <Type className="w-5 h-5 text-blue-300" />
-              <h4 className="font-sora font-bold text-xs">Viral Titles</h4>
+            <div className="p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 space-y-1 hover:bg-white/15 transition">
+              <Type className="w-4 h-4 text-blue-300" />
+              <h4 className="font-sora font-semibold text-xs">Viral Titles</h4>
               <p className="text-[10px] text-white/70">High CTR Focus</p>
             </div>
           </div>
