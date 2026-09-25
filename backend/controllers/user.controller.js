@@ -41,21 +41,15 @@ const registerUser = asyncHandler(async (req, res) => {
   }
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
   const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
-  if (!avatarLocalPath) {
-    throw new ApiError(400, " Avatar file is required ");
-  }
 
-  const avatar = await uploadOnCloudinary(avatarLocalPath);
+  const avatar = avatarLocalPath ? await uploadOnCloudinary(avatarLocalPath) : null;
   const coverImage = coverImageLocalPath
     ? await uploadOnCloudinary(coverImageLocalPath)
     : null;
 
-  if (!avatar) {
-    throw new ApiError(400, "Avatar file upload failed");
-  }
-
-  const avatarUrl = avatar?.secure_url || avatar?.url;
-  const coverImageUrl = coverImage?.secure_url || coverImage?.url || "";
+  const defaultAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(username)}`;
+  const avatarUrl = avatar ? (avatar?.secure_url || avatar?.url) : defaultAvatar;
+  const coverImageUrl = coverImage ? (coverImage?.secure_url || coverImage?.url) : "";
 
   const user = await User.create({
     fullname,
