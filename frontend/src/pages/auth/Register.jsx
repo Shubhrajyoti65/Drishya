@@ -306,7 +306,7 @@ export default function Register() {
         <div className="pt-2 text-center border-t border-slate-100 dark:border-slate-800">
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-sora">
             Already have an account?{' '}
-            <Link to="/register" className="text-blue-600 dark:text-blue-400 font-bold hover:underline">
+            <Link to="/login" className="text-blue-600 dark:text-blue-400 font-bold hover:underline">
               Sign in
             </Link>
           </p>

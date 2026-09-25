@@ -1,8 +1,10 @@
 import { useEffect } from "react";
+import { useClerk } from "@clerk/react";
 import { useAuthStore } from "../stores/authStore";
 import { authAPI } from "../services/api";
 
 export const useAuth = () => {
+  const clerk = useClerk();
   const { user, isAuthenticated, login, logout, initializeAuth } =
     useAuthStore();
 
@@ -58,9 +60,20 @@ export const useAuth = () => {
 
   const handleLogout = async () => {
     try {
-      await authAPI.logout();
+      const token = localStorage.getItem("accessToken");
+      if (token && !token.startsWith("clerk_token_")) {
+        await authAPI.logout();
+      }
     } catch (error) {
-      console.error("Logout error:", error);
+      // Silence backend logout errors (e.g. 401 Unauthorized if token expired)
+    }
+
+    if (clerk && typeof clerk.signOut === "function") {
+      try {
+        await clerk.signOut();
+      } catch (error) {
+        // Silence Clerk signout errors if already signed out
+      }
     }
 
     localStorage.removeItem("accessToken");
