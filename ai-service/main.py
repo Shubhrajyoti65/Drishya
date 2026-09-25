@@ -39,6 +39,7 @@ default_origins = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:8000",
+    "https://drishya-chi.vercel.app",
 ]
 allowed_origins = list(set(default_origins + env_origins)) if env_origins else ["*"]
 

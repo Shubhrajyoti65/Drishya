@@ -9,6 +9,7 @@ const defaultOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:5173",
+  "https://drishya-chi.vercel.app",
 ];
 
 const envOrigins = process.env.CORS_ORIGIN
