@@ -30,9 +30,12 @@ app = FastAPI(
 )
 
 # Add CORS middleware
+cors_origins_env = os.getenv("CORS_ORIGINS", "*")
+allowed_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
+    allow_origins=allowed_origins if allowed_origins else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -100,7 +103,7 @@ async def global_exception_handler(request, exc):
 if __name__ == "__main__":
     import uvicorn
 
-    port = int(os.getenv("AI_SERVICE_PORT", 8001))
+    port = int(os.getenv("PORT", os.getenv("AI_SERVICE_PORT", 8001)))
     host = os.getenv("AI_SERVICE_HOST", "0.0.0.0")
 
     logger.info(f"Starting Drishya AI Service on {host}:{port}")
