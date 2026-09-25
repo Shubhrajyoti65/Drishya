@@ -32,7 +32,8 @@ function ClerkAuthSync() {
     if (isLoaded && isSignedIn && user && !isAuthenticated) {
       const primaryEmail = user.primaryEmailAddress?.emailAddress || `${user.username || user.id}@clerk.user`
       const fullname = user.fullName || user.firstName || 'Creator'
-      const username = user.username || user.firstName?.toLowerCase() || user.id.slice(0, 12)
+      const rawUsername = user.username || user.firstName?.toLowerCase() || `user_${user.id.slice(0, 8)}`
+      const username = rawUsername.trim().replace(/\s+/g, '_').toLowerCase()
       const avatar = user.imageUrl
 
       const clerkUserData = {

@@ -45,37 +45,65 @@ export default function Channel() {
   const fetchChannelData = async () => {
     try {
       const channelResponse = await authAPI.getChannelProfile(username)
-      const creatorData = channelResponse.data.data
-      setChannel(creatorData)
+      const creatorData = channelResponse.data?.data
 
-      const videosResponse = await videoAPI.getVideos(1, 12, 'createdAt', 'desc', creatorData._id)
-      setVideos(videosResponse.data.data?.docs || videosResponse.data.data?.videos || [])
+      if (creatorData) {
+        setChannel(creatorData)
 
-      const subResponse = await subscriptionAPI.checkSubscription(creatorData._id)
-      setIsSubscribed(subResponse.data.data.isSubscribed)
-
-      // Fetch creator's active membership tiers
-      try {
-        const tiersRes = await membershipTierAPI.getCreatorTiers(creatorData._id)
-        setTiers(tiersRes.data.data || [])
-      } catch (e) {
-        console.error('Tiers error:', e)
-      }
-
-      // Check current user's active membership for this channel
-      if (user) {
         try {
-          const membershipsRes = await membershipAPI.getMyMemberships()
-          const active = (membershipsRes.data.data || []).find(
-            (m) => m.creator?._id === creatorData._id && m.status === 'ACTIVE'
-          )
-          setUserMembership(active || null)
+          const videosResponse = await videoAPI.getVideos(1, 12, 'createdAt', 'desc', creatorData._id)
+          setVideos(videosResponse.data.data?.docs || videosResponse.data.data?.videos || [])
         } catch (e) {
-          console.error('User membership check error:', e)
+          console.error('Error fetching channel videos:', e)
         }
+
+        try {
+          const subResponse = await subscriptionAPI.checkSubscription(creatorData._id)
+          setIsSubscribed(subResponse.data?.data?.isSubscribed || false)
+        } catch (e) {
+          console.error('Error checking subscription:', e)
+        }
+
+        try {
+          const tiersRes = await membershipTierAPI.getCreatorTiers(creatorData._id)
+          setTiers(tiersRes.data?.data || [])
+        } catch (e) {
+          console.error('Tiers error:', e)
+        }
+
+        if (user) {
+          try {
+            const membershipsRes = await membershipAPI.getMyMemberships()
+            const active = (membershipsRes.data?.data || []).find(
+              (m) => m.creator?._id === creatorData._id && m.status === 'ACTIVE'
+            )
+            setUserMembership(active || null)
+          } catch (e) {
+            console.error('User membership check error:', e)
+          }
+        }
+        return
       }
     } catch (error) {
-      console.error('Error fetching channel data:', error)
+      console.error('Error fetching channel data from backend:', error)
+    }
+
+    // Fallback: If backend channel fetch fails or returns empty (e.g. Clerk user not registered in DB yet)
+    if (user && (user.username === username || user.username?.toLowerCase() === username?.toLowerCase())) {
+      setChannel({
+        _id: user._id || user.id,
+        username: user.username,
+        fullname: user.fullname || user.username,
+        email: user.email,
+        avatar: user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`,
+        coverImage: user.coverImage || '',
+        subscribersCount: 0,
+      })
+    } else {
+      setChannel({
+        notFound: true,
+        username,
+      })
     }
   }
 
@@ -84,6 +112,7 @@ export default function Channel() {
   }, [username, user])
 
   const handleToggleSubscribe = async () => {
+    if (!channel?._id) return
     try {
       const response = await subscriptionAPI.toggleSubscription(channel._id)
       setIsSubscribed(response.data.data.subscribed)
@@ -98,9 +127,23 @@ export default function Channel() {
     }
   }
 
-  if (!channel) return <div className="p-6">Loading channel profile...</div>
+  if (!channel) return (
+    <div className="p-8 text-center text-gray-500 font-sora animate-pulse">
+      Loading channel profile...
+    </div>
+  )
 
-  const isOwner = user?._id === channel._id
+  if (channel.notFound) return (
+    <div className="p-12 text-center max-w-md mx-auto space-y-4">
+      <h2 className="text-2xl font-bold font-sora text-gray-900 dark:text-white">Channel Not Found</h2>
+      <p className="text-sm text-gray-500 dark:text-gray-400">The channel @{username} does not exist or has been removed.</p>
+      <Link to="/" className="inline-block px-5 py-2.5 bg-crimson text-white rounded-xl font-sora font-semibold text-sm shadow-md">
+        Back to Home
+      </Link>
+    </div>
+  )
+
+  const isOwner = user && (user._id === channel._id || (user.username && channel.username && user.username.toLowerCase() === channel.username.toLowerCase()))
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
