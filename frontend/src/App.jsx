@@ -1,5 +1,8 @@
+import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { AuthenticateWithRedirectCallback, useUser } from '@clerk/react'
 import { useAuth } from './hooks/useAuth'
+import { useAuthStore } from './stores/authStore'
 import { ThemeProvider } from './context/ThemeContext'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -21,15 +24,45 @@ import MyMemberships from './pages/MyMemberships'
 import CreatorMemberships from './pages/CreatorMemberships'
 import CommunityPage from './pages/CommunityPage'
 
+function ClerkAuthSync() {
+  const { isLoaded, isSignedIn, user } = useUser()
+  const { login, isAuthenticated } = useAuthStore()
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user && !isAuthenticated) {
+      const primaryEmail = user.primaryEmailAddress?.emailAddress || `${user.username || user.id}@clerk.user`
+      const fullname = user.fullName || user.firstName || 'Creator'
+      const username = user.username || user.firstName?.toLowerCase() || user.id.slice(0, 12)
+      const avatar = user.imageUrl
+
+      const clerkUserData = {
+        _id: user.id,
+        email: primaryEmail,
+        fullname,
+        username,
+        avatar,
+      }
+
+      localStorage.setItem('user', JSON.stringify(clerkUserData))
+      localStorage.setItem('accessToken', `clerk_token_${user.id}`)
+      login(clerkUserData, `clerk_token_${user.id}`)
+    }
+  }, [isLoaded, isSignedIn, user, isAuthenticated, login])
+
+  return null
+}
+
 function App() {
   const { isAuthenticated } = useAuth()
 
   return (
     <ThemeProvider>
       <Router>
+        <ClerkAuthSync />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/sso-callback" element={<AuthenticateWithRedirectCallback />} />
           
           <Route element={<Layout />}>
             {/* Public Routes */}

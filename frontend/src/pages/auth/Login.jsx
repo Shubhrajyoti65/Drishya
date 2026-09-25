@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { LogIn, Mail, Lock, Eye, EyeOff, Sparkles, ArrowRight } from 'lucide-react'
+import { useClerk } from '@clerk/react'
 import { useAuth } from '../../hooks/useAuth'
 import { useUIStore } from '../../stores/uiStore'
 import { isValidEmail } from '../../utils/helpers'
 
 export default function Login() {
   const navigate = useNavigate()
+  const clerk = useClerk()
   const { handleLogin } = useAuth()
   const showNotification = useUIStore((state) => state.showNotification)
   
@@ -56,8 +58,29 @@ export default function Login() {
     }
   }
 
-  const handleOAuthClick = (providerName) => {
-    showNotification(`Connecting to ${providerName} OAuth via Clerk...`, 'info')
+  const handleOAuthClick = async (providerName) => {
+    try {
+      const strategyMap = {
+        Google: 'oauth_google',
+        Apple: 'oauth_apple',
+        GitHub: 'oauth_github',
+      }
+      const strategy = strategyMap[providerName] || 'oauth_google'
+      
+      if (clerk) {
+        showNotification(`Redirecting to ${providerName}...`, 'info')
+        await clerk.authenticateWithRedirect({
+          strategy,
+          redirectUrl: '/sso-callback',
+          redirectUrlComplete: '/',
+        })
+      } else {
+        showNotification('Clerk service not available.', 'error')
+      }
+    } catch (error) {
+      console.error('OAuth error:', error)
+      showNotification(error.message || `Failed to sign in with ${providerName}`, 'error')
+    }
   }
 
   return (
