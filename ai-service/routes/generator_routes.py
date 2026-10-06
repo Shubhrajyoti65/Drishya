@@ -1,161 +1,177 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from pydantic import BaseModel, Field
-from typing import List, Optional
 import logging
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException
 
-logger = logging.getLogger(__name__)
+from schemas import (
+    GenerateRequest,
+    GenerateResponse,
+    FeedbackRequest,
+    FeedbackResponse,
+    VideoTitleRequest,
+    VideoTitleResponse,
+    ContentIdeaRequest,
+    ContentIdeaResponse,
+    ThumbnailRequest,
+    ThumbnailResponse
+)
+from rag.rag_service import get_rag_service
 
+logger = logging.getLogger("GeneratorRoutes")
 
-class VideoTitleRequest(BaseModel):
-    topic: str = Field(..., min_length=3, max_length=200)
-    niche: str = Field(..., min_length=3, max_length=100)
-    target_audience: Optional[str] = Field(None, max_length=200)
-
-
-class ContentIdeaRequest(BaseModel):
-    niche: str = Field(..., min_length=3, max_length=100)
-    previous_content: Optional[str] = Field(None, max_length=500)
-    target_audience: Optional[str] = Field(None, max_length=200)
-    current_trends: Optional[str] = Field(None, max_length=300)
-
-
-class ThumbnailRequest(BaseModel):
-    topic: str = Field(..., min_length=3, max_length=200)
-    category: str = Field(..., min_length=3, max_length=100)
-    mood: Optional[str] = Field(None, max_length=100)
-
-
-class VideoTitleResponse(BaseModel):
-    success: bool
-    titles: List[str]
-    message: str
-
-
-class ContentIdeaResponse(BaseModel):
-    success: bool
-    ideas: List[dict]
-    message: str
-
-
-class ThumbnailResponse(BaseModel):
-    success: bool
-    suggestions: List[dict]
-    message: str
-
-
-def create_generator_routes(gemini_service, fal_service):
+def create_generator_routes(gemini_service=None, fal_service=None):
     """
-    Create FastAPI routes for content generation
-    
-    Args:
-        gemini_service: Instance of GeminiAIService
+    Create FastAPI routes for content generation with RAG & LangChain
     """
-    router = APIRouter(prefix="/api/v1/generate", tags=["Content Generation"])
+    router = APIRouter(tags=["Content Generation & RAG Workflows"])
 
+    # ==========================================
+    # Unified RAG Generation Endpoint
+    # ==========================================
     @router.post(
-        "/video-titles",
-        response_model=VideoTitleResponse,
-        summary="Generate video titles",
-        description="Generate 5 AI-powered YouTube video titles based on topic, niche, and target audience"
+        "/generate",
+        response_model=GenerateResponse,
+        summary="Unified RAG Content Generation",
+        description="Generates 5 video titles, 3 thumbnail concepts, and 5 personalized content ideas using FAISS retrieval and LLMs."
     )
-    async def generate_video_titles(request: VideoTitleRequest):
+    async def generate_content(request: GenerateRequest):
         """
-        Generate optimized video titles for YouTube
-        
-        Args:
-            request: VideoTitleRequest containing topic, niche, target_audience
-            
-        Returns:
-            VideoTitleResponse with generated titles
+        Main RAG generation endpoint:
+        1. Retrieves contextual documents (top videos, hook formulas, thumbnail patterns) from FAISS
+        2. Injects context into LangChain prompt template
+        3. Calls LLM with strict structured JSON output parsing
+        4. Returns validated Pydantic response
         """
-        if not gemini_service:
+        try:
+            rag_service = get_rag_service()
+            response = await rag_service.generate_content_rag(request)
+            return response
+        except Exception as e:
+            logger.error(f"Error in /generate endpoint: {e}")
             raise HTTPException(
                 status_code=500,
-                detail="Gemini AI Service is not initialized. Please configure a valid GEMINI_API_KEY."
+                detail=f"Content generation failed: {str(e)}"
             )
+
+    # Prefix route alias for API versioning
+    @router.post("/api/v1/generate", response_model=GenerateResponse, include_in_schema=False)
+    async def generate_content_v1(request: GenerateRequest):
+        return await generate_content(request)
+
+    # ==========================================
+    # Personalization Feedback Endpoint
+    # ==========================================
+    @router.post(
+        "/feedback",
+        response_model=FeedbackResponse,
+        summary="Creator Title Feedback",
+        description="Stores creator-selected titles for personalization and continuous FAISS re-ingestion."
+    )
+    async def record_feedback(request: FeedbackRequest):
+        """
+        Record feedback from creator:
+        Stores preferred titles and adds them to the vector index for creator personalization
+        """
         try:
-            titles = await gemini_service.generate_video_titles(
+            rag_service = get_rag_service()
+            return rag_service.store_feedback(request)
+        except Exception as e:
+            logger.error(f"Error recording feedback: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to record feedback: {str(e)}"
+            )
+
+    @router.post("/api/v1/feedback", response_model=FeedbackResponse, include_in_schema=False)
+    async def record_feedback_v1(request: FeedbackRequest):
+        return await record_feedback(request)
+
+    # ==========================================
+    # Health Check Endpoint
+    # ==========================================
+    @router.get(
+        "/health",
+        summary="Health Check",
+        description="Check if the AI service and RAG pipelines are healthy"
+    )
+    async def health_check():
+        rag_service = get_rag_service()
+        has_index = rag_service.vector_store is not None
+        return {
+            "status": "healthy",
+            "service": "Drishya AI Creator Assistant",
+            "rag_index_loaded": has_index
+        }
+
+    @router.get("/api/v1/generate/health", include_in_schema=False)
+    async def health_check_v1():
+        return await health_check()
+
+    # ==========================================
+    # Legacy Sub-Endpoints (Zero Frontend Regression)
+    # ==========================================
+    @router.post(
+        "/api/v1/generate/video-titles",
+        response_model=VideoTitleResponse,
+        summary="Legacy Video Titles Endpoint"
+    )
+    async def generate_video_titles(request: VideoTitleRequest):
+        try:
+            rag_service = get_rag_service()
+            gen_req = GenerateRequest(
                 topic=request.topic,
                 niche=request.niche,
                 target_audience=request.target_audience,
+                creator_id=request.creator_id or "public",
+                tone=request.tone or "engaging"
             )
-
+            result = await rag_service.generate_content_rag(gen_req)
             return VideoTitleResponse(
                 success=True,
-                titles=titles,
-                message="Video titles generated successfully"
+                titles=result.titles,
+                message="Video titles generated successfully using RAG"
             )
-
         except Exception as e:
-            logger.error(f"Error generating video titles: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error generating video titles: {str(e)}"
-            )
+            logger.error(f"Error in video-titles: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     @router.post(
-        "/content-ideas",
+        "/api/v1/generate/content-ideas",
         response_model=ContentIdeaResponse,
-        summary="Generate content ideas",
-        description="Generate 5 personalized content ideas based on creator's niche and audience"
+        summary="Legacy Content Ideas Endpoint"
     )
     async def generate_content_ideas(request: ContentIdeaRequest):
-        """
-        Generate personalized content ideas
-        
-        Args:
-            request: ContentIdeaRequest with niche, previous content, audience, trends
-            
-        Returns:
-            ContentIdeaResponse with generated ideas
-        """
-        if not gemini_service:
-            raise HTTPException(
-                status_code=500,
-                detail="Gemini AI Service is not initialized. Please configure a valid GEMINI_API_KEY."
-            )
         try:
-            ideas = await gemini_service.generate_content_ideas(
+            rag_service = get_rag_service()
+            topic_hint = f"{request.niche} Strategy"
+            if request.previous_content:
+                topic_hint += f" following {request.previous_content}"
+            gen_req = GenerateRequest(
+                topic=topic_hint,
                 niche=request.niche,
-                previous_content=request.previous_content,
                 target_audience=request.target_audience,
-                current_trends=request.current_trends or ""
+                creator_id=request.creator_id or "public"
             )
-
+            result = await rag_service.generate_content_rag(gen_req)
+            ideas_dict = [{"title": idea.title, "description": f"{idea.hook} — {idea.description}"} for idea in result.content_ideas]
             return ContentIdeaResponse(
                 success=True,
-                ideas=ideas,
-                message="Content ideas generated successfully"
+                ideas=ideas_dict,
+                message="Content ideas generated successfully using RAG"
             )
-
         except Exception as e:
-            logger.error(f"Error generating content ideas: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error generating content ideas: {str(e)}"
-            )
+            logger.error(f"Error in content-ideas: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     @router.post(
-        "/thumbnail-suggestions",
+        "/api/v1/generate/thumbnail-suggestions",
         response_model=ThumbnailResponse,
-        summary="Generate thumbnail suggestions",
-        description="Generate 3 thumbnail design suggestions with text, colors, and layout"
+        summary="Legacy Thumbnail Suggestions Endpoint"
     )
     async def generate_thumbnail_suggestions(request: ThumbnailRequest):
-        """
-        Generate thumbnail design suggestions
-        
-        Args:
-            request: ThumbnailRequest with topic and category
-            
-        Returns:
-            ThumbnailResponse with design suggestions
-        """
-        # Try generating via Fal.ai if available
-        if fal_service and fal_service.api_key:
+        # Optional Fal.ai generation if key is present
+        if fal_service and getattr(fal_service, "api_key", None):
             try:
                 import asyncio
-                # Run the blocking Fal.ai network call with a 4-second timeout
                 image_url = await asyncio.wait_for(
                     asyncio.to_thread(
                         fal_service.generate_thumbnail_image,
@@ -165,57 +181,42 @@ def create_generator_routes(gemini_service, fal_service):
                     ),
                     timeout=4.0
                 )
-                suggestions = [
-                    {
-                        "text": f"Generated Thumbnail for '{request.topic}'",
-                        "imageUrl": image_url,
-                        "layout": f"FLUX Dev generated landscape image ({request.category} niche)",
-                        "colors": f"Mood: {request.mood or 'default'}"
-                    }
-                ]
                 return ThumbnailResponse(
                     success=True,
-                    suggestions=suggestions,
+                    suggestions=[{
+                        "text": f"Generated Thumbnail for '{request.topic}'",
+                        "imageUrl": image_url,
+                        "layout": f"FLUX Dev generated image ({request.category} niche)",
+                        "colors": f"Mood: {request.mood or 'default'}"
+                    }],
                     message="Thumbnail image generated successfully using Fal.ai"
                 )
             except Exception as e:
-                logger.warning(f"Fal.ai generation failed, falling back to Gemini suggestions: {str(e)}")
+                logger.warning(f"Fal.ai generation skipped/failed, using RAG thumbnail concepts: {e}")
 
-        if not gemini_service:
-            raise HTTPException(
-                status_code=500,
-                detail="Neither Fal.ai nor Gemini AI Service is initialized. Please configure API keys."
-            )
         try:
-            suggestions = await gemini_service.generate_thumbnail_suggestions(
+            rag_service = get_rag_service()
+            gen_req = GenerateRequest(
                 topic=request.topic,
-                category=request.category,
+                niche=request.category,
+                tone=request.mood or "engaging"
             )
-
+            result = await rag_service.generate_content_rag(gen_req)
+            suggestions = [
+                {
+                    "text": t.text_overlay,
+                    "colors": t.color_palette,
+                    "layout": f"{t.layout_description} | {t.visual_elements}"
+                }
+                for t in result.thumbnails
+            ]
             return ThumbnailResponse(
                 success=True,
                 suggestions=suggestions,
-                message="Thumbnail suggestions generated successfully"
+                message="Thumbnail suggestions generated successfully using RAG"
             )
-
         except Exception as e:
-            logger.error(f"Error generating thumbnail suggestions: {str(e)}")
-            raise HTTPException(
-                status_code=500,
-                detail=f"Error generating thumbnail suggestions: {str(e)}"
-            )
-
-    @router.get(
-        "/health",
-        summary="Health check",
-        description="Check if the AI service is running"
-    )
-    async def health_check():
-        """Health check endpoint"""
-        return {
-            "success": True,
-            "message": "AI service is running",
-            "service": "Drishya AI Generator"
-        }
+            logger.error(f"Error in thumbnail-suggestions: {e}")
+            raise HTTPException(status_code=500, detail=str(e))
 
     return router
