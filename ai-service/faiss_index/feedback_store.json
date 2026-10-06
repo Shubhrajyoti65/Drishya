@@ -1,0 +1,42 @@
+[
+  {
+    "creator_id": "test_creator_999",
+    "niche": "Education",
+    "topic": "Python Data Structures",
+    "selected_title": "Python Data Structures in 10 Minutes (Complete Guide)",
+    "rating": 5,
+    "notes": "High-paced tutorial"
+  },
+  {
+    "creator_id": "creator_test",
+    "niche": "Tech",
+    "topic": "Mastering LangChain",
+    "selected_title": "How to Master LangChain in 15 Minutes",
+    "rating": 5,
+    "notes": "Good actionable title"
+  },
+  {
+    "creator_id": "test_creator_999",
+    "niche": "Education",
+    "topic": "Python Data Structures",
+    "selected_title": "Python Data Structures in 10 Minutes (Complete Guide)",
+    "rating": 5,
+    "notes": "High-paced tutorial"
+  },
+  {
+    "creator_id": "creator_test",
+    "niche": "Tech",
+    "topic": "Mastering LangChain",
+    "selected_title": "How to Master LangChain in 15 Minutes",
+    "rating": 5,
+    "notes": "Good actionable title"
+  },
+  {
+    "creator_id": "test_creator_999",
+    "niche": "Education",
+    "topic": "Python Data Structures",
+    "selected_title": "Python Data Structures in 10 Minutes (Complete Guide)",
+    "rating": 5,
+    "notes": "High-paced tutorial"
+  }
+]
