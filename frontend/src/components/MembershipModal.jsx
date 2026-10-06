@@ -129,27 +129,27 @@ export default function MembershipModal({
     userMembership.tier?._id === selectedTier?._id
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white dark:bg-[#18181B] border border-gray-200 dark:border-gray-800 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-neu-surface border border-neu-border shadow-neu-raised-lg">
         
         {/* Header with Creator Info */}
-        <div className="relative p-6 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-crimson/20 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+        <div className="relative p-6 bg-neu-surface border-b border-neu-border flex items-center justify-between">
           <div className="flex items-center gap-4">
             {creator.avatar ? (
-              <img src={creator.avatar} alt={creator.username} className="w-14 h-14 rounded-2xl object-cover ring-2 ring-blue-500/30" />
+              <img src={creator.avatar} alt={creator.username} className="w-14 h-14 rounded-2xl object-cover border border-neu-border shadow-neu-raised-xs" />
             ) : (
-              <div className="w-14 h-14 rounded-2xl bg-crimson text-white font-bold flex items-center justify-center text-xl">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-crimson to-redAccent text-white font-bold flex items-center justify-center text-xl shadow-neu-glow-crimson border border-red-500/30">
                 {creator.username?.[0]?.toUpperCase()}
               </div>
             )}
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-sora font-bold text-xl text-gray-900 dark:text-white">
+                <h2 className="font-sora font-bold text-xl text-neu-text">
                   Join {creator.fullname || creator.username}
                 </h2>
                 <Sparkles className="w-5 h-5 text-amber-400 fill-current" />
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-neu-text-muted">
                 Unlock exclusive perks, member badges, and special videos
               </p>
             </div>
@@ -157,7 +157,8 @@ export default function MembershipModal({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            className="p-2 rounded-xl text-neu-text-muted hover:text-crimson bg-neu-surface shadow-neu-raised-xs hover:shadow-neu-raised active:shadow-neu-inset-xs border border-neu-border transition-all duration-200"
+            aria-label="Close Modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -168,40 +169,40 @@ export default function MembershipModal({
           
           {/* Status Message Overlays */}
           {statusState === 'PREPARING' && (
-            <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex items-center gap-3 text-blue-700 dark:text-blue-300">
+            <div className="p-4 rounded-2xl bg-neu-surface shadow-neu-inset-xs border border-blueAccent/30 flex items-center gap-3 text-blueAccent">
               <Loader2 className="w-5 h-5 animate-spin" />
               <span className="text-xs font-sora font-semibold">Preparing secure payment...</span>
             </div>
           )}
 
           {statusState === 'VERIFYING' && (
-            <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 flex items-center gap-3 text-purple-700 dark:text-purple-300">
+            <div className="p-4 rounded-2xl bg-neu-surface shadow-neu-inset-xs border border-royalBlue/30 flex items-center gap-3 text-royalBlue">
               <Loader2 className="w-5 h-5 animate-spin" />
               <span className="text-xs font-sora font-semibold">Verifying Razorpay payment signature...</span>
             </div>
           )}
 
           {statusState === 'SUCCESS' && (
-            <div className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 space-y-2">
+            <div className="p-5 rounded-2xl bg-neu-surface shadow-neu-inset-xs border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 space-y-2">
               <div className="flex items-center gap-2 font-sora font-bold text-sm">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-current" />
                 <span>Membership Activated Successfully!</span>
               </div>
-              <p className="text-xs">
+              <p className="text-xs font-sans">
                 Welcome to the channel family! You now have full access to exclusive videos and member badges.
               </p>
             </div>
           )}
 
           {statusState === 'ERROR' && (
-            <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 flex items-center gap-3 text-red-700 dark:text-red-300">
+            <div className="p-4 rounded-2xl bg-neu-surface shadow-neu-inset-xs border border-crimson/40 flex items-center gap-3 text-crimson">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <span className="text-xs font-sora font-semibold">{errorMessage || 'Payment failed. Your membership has not been activated.'}</span>
             </div>
           )}
 
           {statusState === 'CANCELLED' && (
-            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center gap-3 text-amber-700 dark:text-amber-300">
+            <div className="p-4 rounded-2xl bg-neu-surface shadow-neu-inset-xs border border-amber-500/40 flex items-center gap-3 text-amber-600 dark:text-amber-400">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <span className="text-xs font-sora font-semibold">Payment process cancelled. You can try again whenever you are ready.</span>
             </div>
@@ -209,7 +210,7 @@ export default function MembershipModal({
 
           {/* Available Tiers List */}
           {tiers.length === 0 ? (
-            <div className="py-12 text-center text-gray-500">
+            <div className="py-12 text-center text-neu-text-muted">
               This creator has not configured any membership tiers yet.
             </div>
           ) : (
@@ -224,24 +225,24 @@ export default function MembershipModal({
                         setSelectedTier(tier)
                       }
                     }}
-                    className={`relative p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                    className={`relative p-5 rounded-3xl border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
                       isSelected
-                        ? 'border-blue-500 bg-blue-50/20 dark:bg-blue-950/20 shadow-lg scale-[1.02]'
-                        : 'border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#202024] hover:border-gray-300 dark:hover:border-gray-700'
+                        ? 'border-crimson/50 bg-neu-surface shadow-neu-inset scale-[1.01]'
+                        : 'border-neu-border bg-neu-surface shadow-neu-raised-sm hover:shadow-neu-raised hover:-translate-y-0.5'
                     }`}
                   >
                     <div>
                       {/* Tier Tag / Header */}
                       <div className="flex items-center justify-between mb-3">
                         <span
-                          style={{ color: tier.color || '#3B82F6' }}
+                          style={{ color: tier.color || '#C1121F' }}
                           className="font-sora font-bold text-base flex items-center gap-1.5"
                         >
                           <Star className="w-4 h-4 fill-current" />
                           <span>{tier.name}</span>
                         </span>
                         {isSelected && (
-                          <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center">
+                          <div className="w-5 h-5 rounded-full bg-crimson text-white flex items-center justify-center shadow-neu-glow-crimson">
                             <Check className="w-3.5 h-3.5 stroke-[3]" />
                           </div>
                         )}
@@ -249,29 +250,29 @@ export default function MembershipModal({
 
                       {/* Price */}
                       <div className="mb-4">
-                        <span className="font-sora font-extrabold text-2xl text-gray-900 dark:text-white">
+                        <span className="font-sora font-extrabold text-2xl text-neu-text">
                           ₹{tier.price}
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400"> / month</span>
+                        <span className="text-xs text-neu-text-muted"> / month</span>
                       </div>
 
                       {/* Description */}
                       {tier.description && (
-                        <p className="text-xs text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
+                        <p className="text-xs text-neu-text-secondary mb-4 line-clamp-2 font-sans">
                           {tier.description}
                         </p>
                       )}
 
                       {/* Benefits Perks */}
-                      <div className="space-y-2 border-t border-gray-200 dark:border-gray-800 pt-3">
-                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Perks Included:</span>
+                      <div className="space-y-2 border-t border-neu-border pt-3">
+                        <span className="text-[11px] font-bold text-neu-text-muted uppercase tracking-wider font-sora">Perks Included:</span>
                         <ul className="space-y-2">
-                          <li className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-200">
+                          <li className="flex items-start gap-2 text-xs text-neu-text">
                             <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                             <span>Official Member Badge</span>
                           </li>
                           {tier.benefits?.map((benefit, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-200">
+                            <li key={idx} className="flex items-start gap-2 text-xs text-neu-text">
                               <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                               <span>{benefit}</span>
                             </li>
@@ -287,15 +288,15 @@ export default function MembershipModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 bg-gray-50 dark:bg-[#121214] border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+        <div className="p-6 bg-neu-surface border-t border-neu-border flex items-center justify-between">
+          <div className="text-xs text-neu-text-muted font-sans">
             Cancel anytime • Secured by Razorpay
           </div>
 
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl font-sora font-semibold text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition"
+              className="px-5 py-2.5 rounded-2xl font-sora font-semibold text-xs text-neu-text-secondary hover:text-neu-text bg-neu-surface shadow-neu-raised-xs hover:shadow-neu-raised active:shadow-neu-inset-xs border border-neu-border transition-all duration-200"
             >
               {statusState === 'SUCCESS' ? 'Close' : 'Cancel'}
             </button>
@@ -304,10 +305,10 @@ export default function MembershipModal({
               <button
                 disabled={!selectedTier || isCurrentTierActive || statusState === 'PREPARING' || statusState === 'VERIFYING'}
                 onClick={handleJoinClick}
-                className={`px-6 py-2.5 rounded-xl font-sora font-bold text-xs text-white shadow-md transition flex items-center gap-2 ${
+                className={`px-6 py-2.5 rounded-2xl font-sora font-bold text-xs text-white shadow-neu-glow-crimson transition-all duration-200 flex items-center gap-2 border border-red-500/30 ${
                   isCurrentTierActive
-                    ? 'bg-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/20'
+                    ? 'bg-neu-surface shadow-none text-neu-text-muted cursor-not-allowed border-neu-border'
+                    : 'bg-gradient-to-r from-crimson to-redAccent hover:brightness-105 active:shadow-neu-inset'
                 }`}
               >
                 {(statusState === 'PREPARING' || statusState === 'VERIFYING') && (
@@ -322,7 +323,6 @@ export default function MembershipModal({
             )}
           </div>
         </div>
-
       </div>
     </div>
   )

@@ -196,19 +196,19 @@ export default function PollCard({
   const displayQuestion = question || "What type of video content should we produce next week?"
 
   return (
-    <div className="p-5 rounded-2xl bg-gray-50 dark:bg-[#161B22] border border-gray-200 dark:border-gray-800 space-y-4 my-3">
+    <div className="p-5 sm:p-6 rounded-3xl bg-neu-surface border border-neu-border shadow-neu-raised-sm space-y-4 my-3">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs font-sora font-semibold text-royalBlue dark:text-blue-400">
+        <div className="flex items-center gap-2 text-xs font-sora font-semibold text-royalBlue">
           <BarChart2 className="w-4 h-4" />
           <span>CREATOR POLL</span>
         </div>
-        <span className="text-[11px] text-gray-500 flex items-center gap-1">
+        <span className="text-[11px] text-neu-text-muted flex items-center gap-1 font-sans">
           <Users className="w-3.5 h-3.5" />
           {votesCount} votes
         </span>
       </div>
 
-      <h4 className="font-sora font-bold text-sm text-gray-900 dark:text-white">
+      <h4 className="font-sora font-bold text-sm sm:text-base text-neu-text">
         {displayQuestion}
       </h4>
 
@@ -222,29 +222,29 @@ export default function PollCard({
             <button
               key={opt.id}
               onClick={() => handleVote(opt.id)}
-              className={`w-full text-left p-3 rounded-xl border relative overflow-hidden transition-all duration-300 cursor-pointer ${
+              className={`w-full text-left p-3.5 rounded-2xl border relative overflow-hidden transition-all duration-200 cursor-pointer ${
                 isSelected
-                  ? 'border-royalBlue bg-blue-50/50 dark:bg-blue-950/40 text-royalBlue dark:text-blue-400 font-semibold ring-1 ring-royalBlue/40'
-                  : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1F2937] hover:border-royalBlue/60 hover:bg-blue-50/30 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200'
+                  ? 'border-royalBlue/50 bg-neu-surface shadow-neu-inset text-royalBlue font-semibold'
+                  : 'border-neu-border bg-neu-surface shadow-neu-raised-xs hover:shadow-neu-raised hover:-translate-y-0.5 active:shadow-neu-inset text-neu-text'
               }`}
             >
               {/* Progress bar fill after voting */}
               {selectedOption !== null && (
                 <div
                   className={`absolute inset-y-0 left-0 transition-all duration-500 ${
-                    isSelected ? 'bg-royalBlue/20 dark:bg-blue-600/30' : 'bg-gray-100 dark:bg-gray-700/40'
+                    isSelected ? 'bg-royalBlue/15' : 'bg-neu-hover'
                   }`}
                   style={{ width: `${percentage}%` }}
                 />
               )}
 
-              <div className="relative z-10 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 pr-4">
+              <div className="relative z-10 flex items-center justify-between text-xs sm:text-sm">
+                <div className="flex items-center gap-2.5 pr-4">
                   {isSelected && <CheckCircle2 className="w-4 h-4 text-royalBlue flex-shrink-0" />}
                   <span className="font-sora">{opt.text}</span>
                 </div>
                 {selectedOption !== null && (
-                  <span className="font-mono font-bold text-gray-900 dark:text-white">
+                  <span className="font-mono font-bold text-neu-text">
                     {percentage}%
                   </span>
                 )}
@@ -254,7 +254,7 @@ export default function PollCard({
         })}
       </div>
       {selectedOption !== null && (
-        <div className="text-[10px] text-gray-400 font-sora text-right pt-0.5">
+        <div className="text-[10px] text-neu-text-muted font-sora text-right pt-0.5">
           Click any option to change your vote or click again to undo
         </div>
       )}

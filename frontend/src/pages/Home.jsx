@@ -34,15 +34,17 @@ export default function Home() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-            <div key={n} className="aspect-video rounded-2xl bg-gray-200 dark:bg-gray-800/60 animate-pulse" />
+            <div key={n} className="aspect-video rounded-3xl bg-neu-surface shadow-neu-inset-xs border border-neu-border animate-pulse" />
           ))}
         </div>
       ) : videos.length === 0 ? (
-        <div className="text-center py-20 bg-white dark:bg-[#141417] rounded-3xl border border-gray-200 dark:border-gray-800 space-y-3">
-          <VideoIcon className="w-12 h-12 mx-auto text-gray-400" />
-          <h3 className="font-sora font-bold text-lg text-gray-900 dark:text-white">No Videos Found</h3>
-          <p className="text-xs text-gray-500 max-w-sm mx-auto">
-            There are no videos uploaded yet. Go to your Profile page to upload your first video.
+        <div className="text-center py-20 bg-neu-surface rounded-3xl border border-neu-border shadow-neu-raised space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-neu-surface shadow-neu-inset-xs border border-neu-border flex items-center justify-center mx-auto text-neu-text-muted">
+            <VideoIcon className="w-7 h-7" />
+          </div>
+          <h3 className="font-sora font-bold text-lg text-neu-text">No Videos Found</h3>
+          <p className="text-xs text-neu-text-muted max-w-sm mx-auto font-sans">
+            There are no videos uploaded yet. Go to your Profile page to upload your first video or generate AI ideas in the Studio.
           </p>
         </div>
       ) : (
@@ -58,16 +60,16 @@ export default function Home() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#18181B] text-xs font-sora font-semibold text-gray-700 dark:text-gray-300 disabled:opacity-50 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              className="px-4 py-2.5 rounded-2xl border border-neu-border bg-neu-surface text-xs font-sora font-semibold text-neu-text shadow-neu-raised-xs hover:shadow-neu-raised-sm active:shadow-neu-inset-xs disabled:opacity-50 disabled:shadow-none transition-all duration-200"
             >
               Previous
             </button>
-            <span className="px-3 py-1.5 text-xs font-sora font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <span className="px-3.5 py-2 text-xs font-sora font-bold text-neu-text bg-neu-surface shadow-neu-inset-xs border border-neu-border rounded-xl">
               Page {page}
             </span>
             <button
               onClick={() => setPage(p => p + 1)}
-              className="px-4 py-2 rounded-xl bg-crimson hover:bg-redAccent text-white text-xs font-sora font-semibold shadow-md shadow-crimson/20 transition"
+              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-crimson to-redAccent text-white text-xs font-sora font-semibold shadow-neu-glow-crimson hover:brightness-105 active:shadow-neu-inset border border-red-500/30 transition-all duration-200"
             >
               Next Page
             </button>

@@ -16,7 +16,7 @@ const Layout = () => {
   }, [location, setSidebarOpen])
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0D0D0D] text-gray-900 dark:text-gray-100 flex flex-col font-sans selection:bg-crimson selection:text-white transition-colors duration-300">
+    <div className="min-h-screen bg-neu-bg text-neu-text flex flex-col font-sans selection:bg-crimson selection:text-white transition-colors duration-200">
       <Navbar />
 
       <div className="flex-1 flex overflow-hidden relative">

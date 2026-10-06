@@ -36,21 +36,22 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-64 bg-white dark:bg-[#0D0D0D] border-r border-gray-200 dark:border-gray-800/80 p-5 flex flex-col h-full z-40 transition-all duration-300 shadow-2xl">
+    <aside className="w-64 bg-neu-surface border-r border-neu-border p-5 flex flex-col h-full z-40 transition-all duration-200 shadow-neu-raised-lg">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <Link to="/" onClick={handleLinkClick} className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-crimson flex items-center justify-center text-white shadow-md shadow-crimson/20">
+        <Link to="/" onClick={handleLinkClick} className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-2xl bg-gradient-to-tr from-crimson to-redAccent flex items-center justify-center text-white shadow-neu-glow-crimson border border-red-500/30">
             <Video className="w-4 h-4 fill-current" />
           </div>
-          <span className="font-sora font-bold text-lg text-gray-900 dark:text-white">
+          <span className="font-sora font-bold text-lg text-neu-text">
             Drishya<span className="text-crimson">.</span>
           </span>
         </Link>
         <button
           onClick={toggleSidebar}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+          className="p-1.5 rounded-xl text-neu-text-muted hover:text-neu-text bg-neu-surface hover:shadow-neu-raised-xs active:shadow-neu-inset-xs border border-transparent hover:border-neu-border transition-all duration-200"
           title="Close Sidebar"
+          aria-label="Close Sidebar"
         >
           <X className="w-5 h-5" />
         </button>
@@ -59,10 +60,10 @@ export default function Sidebar() {
       {/* Main Navigation */}
       <div className="flex-1 space-y-6 overflow-y-auto pr-1">
         <div>
-          <h3 className="text-[11px] font-sora font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">
+          <h3 className="text-[11px] font-sora font-semibold text-neu-text-muted uppercase tracking-wider mb-3 px-3">
             Menu
           </h3>
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             {navLinks.map((link) => {
               const Icon = link.icon
               const active = isActive(link.path)
@@ -71,18 +72,18 @@ export default function Sidebar() {
                   key={link.name}
                   to={link.path}
                   onClick={handleLinkClick}
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl font-medium text-sm transition-all duration-200 border ${
                     active
-                      ? 'bg-crimson/10 dark:bg-crimson/20 text-crimson font-semibold'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
+                      ? 'bg-neu-surface shadow-neu-inset-xs text-crimson font-semibold border-crimson/30'
+                      : 'text-neu-text-secondary hover:text-neu-text bg-neu-surface hover:shadow-neu-raised-xs active:shadow-neu-inset-xs border-transparent hover:border-neu-border'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${active ? 'text-crimson' : 'text-gray-400'}`} />
+                    <Icon className={`w-4 h-4 ${active ? 'text-crimson' : 'text-neu-text-muted'}`} />
                     <span>{link.name}</span>
                   </div>
                   {link.badge && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-gradient-to-r from-blueAccent to-crimson text-white">
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gradient-to-r from-blueAccent to-crimson text-white">
                       {link.badge}
                     </span>
                   )}
@@ -94,17 +95,17 @@ export default function Sidebar() {
 
         {/* Communities Section */}
         <div>
-          <h3 className="text-[11px] font-sora font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">
+          <h3 className="text-[11px] font-sora font-semibold text-neu-text-muted uppercase tracking-wider mb-3 px-3">
             Explore & Network
           </h3>
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             <Link
               to="/community"
               onClick={handleLinkClick}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition ${
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-medium text-sm transition-all duration-200 border ${
                 location.pathname === '/community'
-                  ? 'bg-crimson/10 dark:bg-crimson/20 text-crimson font-semibold'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-neu-surface shadow-neu-inset-xs text-crimson font-semibold border-crimson/30'
+                  : 'text-neu-text-secondary hover:text-neu-text bg-neu-surface hover:shadow-neu-raised-xs active:shadow-neu-inset-xs border-transparent hover:border-neu-border'
               }`}
             >
               <Users className="w-4 h-4 text-royalBlue" />
@@ -115,17 +116,17 @@ export default function Sidebar() {
       </div>
 
       {/* Footer / Account */}
-      <div className="pt-4 mt-auto border-t border-gray-200 dark:border-gray-800 space-y-1">
+      <div className="pt-4 mt-auto border-t border-neu-border space-y-1.5">
         <Link
           to="/settings"
           onClick={handleLinkClick}
-          className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition ${
+          className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-medium text-sm transition-all duration-200 border ${
             isActive('/settings')
-              ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-semibold'
-              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
+              ? 'bg-neu-surface shadow-neu-inset-xs text-neu-text font-semibold border-neu-border'
+              : 'text-neu-text-secondary hover:text-neu-text bg-neu-surface hover:shadow-neu-raised-xs active:shadow-neu-inset-xs border-transparent hover:border-neu-border'
           }`}
         >
-          <Settings className="w-4 h-4 text-gray-400" />
+          <Settings className="w-4 h-4 text-neu-text-muted" />
           <span>Settings</span>
         </Link>
         <button
@@ -133,9 +134,9 @@ export default function Sidebar() {
             handleLinkClick()
             handleLogout()
           }}
-          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-crimson transition"
+          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-medium text-sm text-neu-text-secondary hover:text-crimson bg-neu-surface hover:shadow-neu-raised-xs active:shadow-neu-inset-xs border border-transparent hover:border-crimson/30 transition-all duration-200"
         >
-          <LogOut className="w-4 h-4 text-gray-400" />
+          <LogOut className="w-4 h-4 text-neu-text-muted" />
           <span>Sign Out</span>
         </button>
       </div>
