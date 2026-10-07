@@ -9,9 +9,6 @@ import {
   Video, 
   Shield, 
   Upload, 
-  Lock, 
-  Globe, 
-  Crown, 
   Edit2, 
   Trash2, 
   Save, 
@@ -21,8 +18,7 @@ import {
   X, 
   Camera,
   Sun,
-  Moon,
-  Sparkles
+  Moon
 } from 'lucide-react'
 
 export default function Settings() {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { videoAPI } from '../services/api'
 import VideoCard from '../components/VideoCard'
-import { Video as VideoIcon, Loader2 } from 'lucide-react'
+import { Video as VideoIcon } from 'lucide-react'
 
 export default function Home() {
   const [videos, setVideos] = useState([])

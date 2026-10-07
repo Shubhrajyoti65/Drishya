@@ -6,7 +6,6 @@ import { useTheme } from '../context/ThemeContext'
 import SearchBar from './SearchBar'
 import {
   Sparkles,
-  Upload,
   Bell,
   BellOff,
   Sun,
@@ -14,7 +13,6 @@ import {
   Menu,
   User,
   Video,
-  Layers,
   CheckCheck,
   Trash2,
   X,

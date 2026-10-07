@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { playlistAPI, videoAPI } from '../services/api'
+import { playlistAPI } from '../services/api'
 
 export default function PlaylistVideos() {
   const { playlistId } = useParams()
