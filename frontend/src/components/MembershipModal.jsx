@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, Check, Star, Crown, ShieldCheck, Sparkles, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { X, Check, Star, Sparkles, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { paymentAPI } from '../services/api'
 
 // Helper function to load Razorpay Checkout script dynamically

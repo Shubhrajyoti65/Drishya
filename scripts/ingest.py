@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 
 # Redirect to ai-service/scripts/ingest.py

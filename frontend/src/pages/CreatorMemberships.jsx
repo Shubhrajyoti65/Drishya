@@ -11,10 +11,8 @@ import {
   CheckCircle2,
   Star,
   Crown,
-  ShieldCheck,
   Award,
   Loader2,
-  RefreshCw,
   X,
   AlertCircle
 } from 'lucide-react'

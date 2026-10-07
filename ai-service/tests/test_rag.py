@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-import pytest
 
 # Ensure ai-service root is in python path
 service_root = Path(__file__).resolve().parent.parent
@@ -8,7 +7,7 @@ if str(service_root) not in sys.path:
     sys.path.insert(0, str(service_root))
 
 from rag.rag_service import get_rag_service
-from schemas import GenerateRequest, FeedbackRequest
+from schemas import FeedbackRequest
 
 def test_rag_retrieval_returns_results():
     """Test that RAG retriever retrieves relevant context documents"""

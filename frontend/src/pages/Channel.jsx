@@ -8,7 +8,7 @@ import MemberBadge from '../components/MemberBadge'
 import CreatorMemberships from './CreatorMemberships'
 import MyMemberships from './MyMemberships'
 import Upload from './Upload'
-import { Star, Crown, Lock, CheckCircle2, Upload as UploadIcon, PlusCircle } from 'lucide-react'
+import { Star, Crown, Lock, Upload as UploadIcon } from 'lucide-react'
 
 export default function Channel() {
   const { username, tab } = useParams()

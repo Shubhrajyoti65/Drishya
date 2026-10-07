@@ -15,10 +15,8 @@ import {
   Zap, 
   Layers,
   Sparkle,
-  RefreshCw,
   Palette,
-  Layout as LayoutIcon,
-  Clock
+  Layout as LayoutIcon
 } from 'lucide-react'
 import { 
   NeuCard, 

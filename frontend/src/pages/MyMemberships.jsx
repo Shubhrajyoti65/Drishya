@@ -4,7 +4,6 @@ import { membershipAPI, subscriptionAPI } from '../services/api'
 import { useAuth } from '../hooks/useAuth'
 import MemberBadge from '../components/MemberBadge'
 import { 
-  Star, 
   Users, 
   Calendar, 
   ShieldAlert, 

@@ -8,15 +8,11 @@ import {
   Heart,
   Repeat,
   Bookmark,
-  Share2,
   Send,
-  Image as ImageIcon,
   BarChart2,
-  Sparkles,
   CheckCircle2,
   Edit3,
   Trash2,
-  MoreHorizontal,
   Users
 } from 'lucide-react'
 
